@@ -30,7 +30,7 @@ def calibration(human_info, real_sense_calibration = True):
     new_y = eye_z * math.sin(math.radians(detected_y_angle))
     new_z = eye_z
 
-    new_x, new_y, new_z = new_x * -1.0, new_y * 1.0, new_z * 1.0
+    new_x, new_y, new_z = new_x * 1.0, new_y * 1.0, new_z * 1.0
     new_x = calib_parameter[0] * new_x + calib_parameter[3] * new_y + calib_parameter[6] * new_z + (calib_parameter[9])
     new_y = calib_parameter[1] * new_x + calib_parameter[4] * new_y + calib_parameter[7] * new_z + (calib_parameter[10])
     new_z = calib_parameter[2] * new_x + calib_parameter[5] * new_y + calib_parameter[8] * new_z + (calib_parameter[11])
