@@ -75,7 +75,7 @@ def load_mode(base_path):
 
 def main(video_folder_path=None):
     base_path = os.path.dirname(os.path.abspath(__file__))
-    fps = 20
+    fps = 21
     iteration = 0
     human_infos = None
     draw_frame = None
@@ -178,7 +178,7 @@ def main(video_folder_path=None):
 
 
                 fps = 1 / (time.time() - start_time)
-                #print(fps)
+                print(fps)
                 pressed_key = cv2.waitKey(1)
                 if pressed_key == 27:
                     break

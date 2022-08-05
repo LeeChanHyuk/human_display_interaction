@@ -94,7 +94,7 @@ def inference(pose_sequence):
         state = actions[max_voted_action_class]
     else:
         state = 'standard'
-    print(action_vote)
+    #print(action_vote)
     return state
 
 def action_recognition(frame, draw_frame, human_info, fps):

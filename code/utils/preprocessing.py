@@ -69,9 +69,10 @@ def size_normalization(data: np.array, fps: int) -> np.array: # input shape = (s
         if len(new_array) % 2:
             new_array = new_array[0:len(new_array)-1]
         normalize_num = 2 * (new_array.shape[0] - 20)
-        temp_data = new_array[-normalize_num:]
-        temp_data = (temp_data[0:len(temp_data):2] + temp_data[1:len(temp_data):2]) / 2
-        new_array = np.concatenate([new_array[0:len(new_array) - normalize_num], temp_data])
+        if normalize_num > 0:
+            temp_data = new_array[-normalize_num:]
+            temp_data = (temp_data[0:len(temp_data):2] + temp_data[1:len(temp_data):2]) / 2
+            new_array = np.concatenate([new_array[0:len(new_array) - normalize_num], temp_data])
     if new_array.shape[0] > 20:
         print('call')
     return new_array
