@@ -178,7 +178,7 @@ def main(video_folder_path=None):
 
 
                 fps = 1 / (time.time() - start_time)
-                print(fps)
+                #print(fps)
                 pressed_key = cv2.waitKey(1)
                 if pressed_key == 27:
                     break
