@@ -39,7 +39,7 @@ def networking(human_info, mode, base_path):
     communication_write = open(os.path.join(base_path, 'communication.txt'), 'r+')
     communication_write.write(str(mode) + '\n')
     communication_write.write(str(round(human_info.calib_center_eyes[0])).zfill(3) + ' ' + str(round(human_info.calib_center_eyes[1]+20)).zfill(3)
-                              + ' ' + str(round(human_info.calib_center_eyes[2])).zfill(3) + '\n')
+                              + ' ' + str(round(human_info.calib_center_eyes[2])).zfill(3) + str(round(human_info.center_eyes[-1][2])).zfill(3) + '\n')
     communication_write.write(str(round(human_info.head_poses[-1][1])).zfill(3) + ' ' + str(round(human_info.head_poses[-1][0])).zfill(3)
                               + ' ' + str(round(human_info.head_poses[-1][2])).zfill(3) + '\n')
     communication_write.write(human_info.human_state+'\n')

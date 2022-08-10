@@ -51,10 +51,9 @@ def face_detection(frame, depth, face_mesh, human_infos = None):
             human_infos = []
         for index, face_landmarks in enumerate(face_results.multi_face_landmarks):
             if index >= len(human_infos):
+                human_info = HumanInfo()
                 if len(human_infos)>0:
-                    human_info = human_infos[-1]
-                else:
-                    human_info = HumanInfo()
+                    human_info = human_info_deep_copy(human_infos, human_info)
             else:
                 human_info = human_infos[index]
             face_boxes, right_eye_box, left_eye_box = box_extraction(
@@ -78,3 +77,25 @@ def face_detection(frame, depth, face_mesh, human_infos = None):
         return human_infos, len(face_results.multi_face_landmarks)
     else:
         return human_infos, 0
+
+def human_info_deep_copy(human_infos, human_info):
+    reference_human_info = human_infos[-1]
+    human_info.center_eyes = reference_human_info.center_eyes
+    human_info.center_mouths =reference_human_info.center_mouths
+    human_info.left_shoulders =reference_human_info.left_shoulders
+    human_info.right_shoulders =reference_human_info.right_shoulders
+    human_info.center_stomachs =reference_human_info.center_stomachs
+    human_info.face_box = reference_human_info.face_box
+    human_info.left_eye_box = reference_human_info.left_eye_box
+    human_info.right_eye_box = reference_human_info.right_eye_box
+
+    human_info.head_poses = reference_human_info.head_poses
+    human_info.body_poses =reference_human_info.body_poses
+    human_info.eye_poses =reference_human_info.eye_poses
+    human_info.left_eye_landmark =reference_human_info.left_eye_landmark
+    human_info.right_eye_landmark =reference_human_info.right_eye_landmark
+    human_info.left_eye_gaze =reference_human_info.left_eye_gaze
+    human_info.right_eye_gaze =reference_human_info.right_eye_gaze
+    human_info.calib_center_eyes =reference_human_info.calib_center_eyes
+    human_info.human_state = reference_human_info.human_state # Action recognition result
+    return human_info
