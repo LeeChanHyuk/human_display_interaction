@@ -20,7 +20,6 @@ import re
 import random
 import os
 
-from sqlalchemy import true
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # Data collection
@@ -50,7 +49,6 @@ from utils import preprocessing
 
 # Mediapipe visualization objects
 mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
