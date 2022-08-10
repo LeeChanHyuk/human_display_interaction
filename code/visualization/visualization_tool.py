@@ -75,12 +75,12 @@ def visualization(draw_frame, depth, human_info, text_visualization, flip_mode):
 
     # Visualize head pose
     if human_info.head_pose_estimation_flag:
-        draw_frame = draw_axis(draw_frame, flip_val * human_info.head_poses[-1][0], human_info.head_poses[-1][1], human_info.head_poses[-1][2], 
+        draw_frame = draw_axis(draw_frame, flip_val * human_info.head_poses[-1][0], human_info.head_poses[-1][1], flip_val * human_info.head_poses[-1][2], 
                           [640 - int((human_info.face_box[0][0] + human_info.face_box[0][2])/2), int(human_info.face_box[0][1] - 30)])
 
     # Visualize body pose
     if human_info.body_pose_estimation_flag:
-        draw_frame = draw_axis(draw_frame, flip_val * human_info.body_poses[-1][0], human_info.body_poses[-1][1], human_info.body_poses[-1][2], 
+        draw_frame = draw_axis(draw_frame, flip_val * human_info.body_poses[-1][0], human_info.body_poses[-1][1], flip_val * human_info.body_poses[-1][2], 
                           [640 - int((human_info.left_shoulders[-1][0] + human_info.right_shoulders[-1][0])/2), int(human_info.left_shoulders[-1][1])], 
                           color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
 
@@ -103,10 +103,10 @@ def visualization(draw_frame, depth, human_info, text_visualization, flip_mode):
         if human_info.body_pose_estimation_flag:
             center_shoulder = (human_info.left_shoulders[-1] + human_info.right_shoulders[-1]) / 2
             zero_array= draw_body_information(zero_array, width, height, round(center_shoulder[0], 2), round(center_shoulder[1], 2), round(center_shoulder[2], 2), 
-																	flip_val * round(human_info.body_poses[-1][0], 2), round(human_info.body_poses[-1][1], 2), round(human_info.body_poses[-1][2], 2))
+																	flip_val * round(human_info.body_poses[-1][0], 2), round(human_info.body_poses[-1][1], 2), round(flip_val * human_info.body_poses[-1][2], 2))
         if human_info.head_pose_estimation_flag:
             zero_array = draw_face_information(zero_array, width, height, round(human_info.center_eyes[-1][0], 2), round(human_info.center_eyes[-1][1]),
-																	round(human_info.center_eyes[-1][2]), flip_val * round(human_info.head_poses[-1][0], 2), round(human_info.head_poses[-1][1], 2),
+																	round(human_info.center_eyes[-1][2]), flip_val * round(human_info.head_poses[-1][0], 2), round(flip_val * human_info.head_poses[-1][1], 2),
 																	round(human_info.head_poses[-1][2], 2))
 
         if human_info.gaze_estimation_flag:

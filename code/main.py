@@ -35,7 +35,7 @@ from estimators.action_recognizer import inference
 from estimators.gaze_estimation_module.util.gaze import draw_gaze
 from estimators.body_pose_estimator import body_keypoint_extractor, upside_body_pose_calculator
 import estimators.head_pose_estimation_module.service as service
-from estimators.face_detector import face_detection
+from estimators.face_detector import eye_box_visualization, face_detection
 from estimators.face_detector import calibration
 from estimators.head_pose_estimator import head_pose_estimation
 from estimators.main_user_classifier import main_user_classification
@@ -65,13 +65,13 @@ flip_mode = True
 actions = [ 'left', 'left-up', 'up',
 'right-up', 'right', 'right-down', 'down', 'left-down', 'zoom-in', 'zoom-out','standard']
 
-def load_mode(base_path):
+def load_mode(base_path) -> int:
     communication_file = open(os.path.join(base_path, 'communication.txt'), 'r')
     mode = communication_file.readline().strip()
     communication_file.close()
-    return mode
+    return int(mode)
 
-def main(video_folder_path=None):
+def main(video_folder_path=None) -> None:
     base_path = os.path.dirname(os.path.abspath(__file__))
     fps = 21
     iteration = 0
@@ -143,24 +143,30 @@ def main(video_folder_path=None):
                 human_infos, face_num = face_detection(frame, depth, face_mesh, human_infos)
 
                 if face_num:
+                    draw_frame = eye_box_visualization(frame.copy(), human_infos)
+                    if flip_mode:
+                        draw_frame = cv2.flip(draw_frame, 1)
+
                     # Head pose estimation
-                    human_infos = head_pose_estimation(frame, human_infos, fa, handler)
-                        
-                    # Main user classification
-                    main_user_index, draw_frame = main_user_classification(frame, human_infos)
-                    human_infos = [human_infos[main_user_index]]
+                    if mode > 1:
+                        human_infos = head_pose_estimation(frame, human_infos, fa, handler)
+                            
+                        # Main user classification
+                        main_user_index, draw_frame = main_user_classification(draw_frame, human_infos, flip_mode)
+                        human_infos = [human_infos[main_user_index]]
 
-                    # Gaze estimation
-                    #frame = gaze_estimation(frame_copy, frame, human_infos[main_user_index], visualization)
+                    if mode > 2:
+                        # Gaze estimation
+                        # frame = gaze_estimation(frame_copy, frame, human_infos[main_user_index], visualization)
 
-                    # Body pose estimation
-                    draw_frame = body_pose_estimation(pose, frame, draw_frame, depth, human_infos[0])
+                        # Body pose estimation
+                        draw_frame = body_pose_estimation(pose, frame, draw_frame, depth, human_infos[0])
 
-                    # Action recognition
-                    draw_frame = action_recognition(frame, draw_frame, human_infos[0], fps)
+                        # Action recognition
+                        draw_frame = action_recognition(frame, draw_frame, human_infos[0], fps)
 
                     # Visualization
-                    draw_frame = visualization(draw_frame, depth, human_infos[main_user_index], text_visualization, flip_mode)
+                    draw_frame = visualization(draw_frame, depth, human_infos[0], text_visualization, flip_mode)
 
                     # Calibration
                     calibration(human_infos[0])

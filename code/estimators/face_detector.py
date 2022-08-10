@@ -69,7 +69,7 @@ def face_detection(frame, depth, face_mesh, human_infos = None):
 
             center_eyes_x = (left_eye_box[0][0] + left_eye_box[0][2]) / 2
             center_eyes_y = (left_eye_box[0][1] + left_eye_box[0][3]) / 2
-            center_eyes_z = depth[int(center_eyes_y), int(center_eyes_x)]
+            center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)]
             human_info._put_data([center_eyes_x, center_eyes_y, center_eyes_z], 'center_eyes')
             if index >= len(human_infos):
                 human_infos.append(human_info)
@@ -99,3 +99,11 @@ def human_info_deep_copy(human_infos, human_info):
     human_info.calib_center_eyes =reference_human_info.calib_center_eyes
     human_info.human_state = reference_human_info.human_state # Action recognition result
     return human_info
+
+def eye_box_visualization(draw_frame, human_infos):
+    for human_info in human_infos:
+        cv2.rectangle(draw_frame, 
+                     (int(human_info.left_eye_box[0][0]), int(human_info.left_eye_box[0][1])), 
+                     (int(human_info.left_eye_box[0][2]), int(human_info.left_eye_box[0][3])), 
+                     (0, 0, 255), 3)
+    return draw_frame
