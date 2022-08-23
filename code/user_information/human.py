@@ -66,6 +66,7 @@ class HumanInfo():
 		self.face_box = [1.0, 1.0, 1.0, 1.0]
 		self.left_eye_box = [1.0, 1.0, 1.0, 1.0]
 		self.right_eye_box = [1.0, 1.0, 1.0, 1.0]
+		self.face_detection_confidence = 0
 
 		# Postures of human
 		self.head_poses = [[1.0, 1.0, 1.0] for x in range(200)]

@@ -35,7 +35,7 @@ from estimators.action_recognizer import inference
 from estimators.gaze_estimation_module.util.gaze import draw_gaze
 from estimators.body_pose_estimator import body_keypoint_extractor, upside_body_pose_calculator
 import estimators.head_pose_estimation_module.service as service
-from estimators.face_detector import eye_box_visualization, face_detection
+from estimators.face_detector import face_box_visualization, face_detection, new_face_detection
 from estimators.face_detector import calibration
 from estimators.head_pose_estimator import head_pose_estimation
 from estimators.main_user_classifier import main_user_classification
@@ -80,6 +80,9 @@ def main(video_folder_path=None) -> None:
 
     # Initialize face detection module
     fa = service.DepthFacialLandmarks(os.path.join(base_path, "estimators/head_pose_estimation_module/weights/sparse_face.tflite"))
+    net = cv2.dnn.readNetFromCaffe(
+        os.path.join(base_path, "estimators/deploy.prototxt.txt"), 
+        os.path.join(base_path, "estimators/res10_300x300_ssd_iter_140000.caffemodel"))
     print('Face detection module is initialized')
 
     # Initialize head pose estimation module
@@ -136,14 +139,13 @@ def main(video_folder_path=None) -> None:
                 # Input visualization
                 frame_copy = frame.copy()
                 cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
-                cv2.imshow('frame', frame_copy)
                 cv2.waitKey(1)
 
                 # Media pipe face detection
-                human_infos, face_num = face_detection(frame, depth, face_mesh, human_infos)
+                human_infos, face_num = new_face_detection(frame, depth, net, human_infos)
 
                 if face_num:
-                    draw_frame = eye_box_visualization(frame.copy(), human_infos)
+                    draw_frame = frame.copy()
                     if flip_mode:
                         draw_frame = cv2.flip(draw_frame, 1)
 
@@ -153,7 +155,6 @@ def main(video_folder_path=None) -> None:
                             
                         # Main user classification
                         main_user_index, draw_frame = main_user_classification(draw_frame, human_infos, flip_mode)
-                        human_infos = [human_infos[main_user_index]]
 
                     if mode > 2:
                         # Gaze estimation
@@ -165,7 +166,14 @@ def main(video_folder_path=None) -> None:
                         # Action recognition
                         draw_frame = action_recognition(frame, draw_frame, human_infos[0], fps)
 
+                    if mode > 1:
+                        human_infos = [human_infos[main_user_index]]
+                    else:
+                        human_infos = [human_infos[0]]
+
                     # Visualization
+                    draw_frame = face_box_visualization(draw_frame, human_infos, flip_mode)
+                    cv2.imshow('Pose1', draw_frame)
                     draw_frame = visualization(draw_frame, depth, human_infos[0], text_visualization, flip_mode)
 
                     # Calibration
@@ -179,6 +187,7 @@ def main(video_folder_path=None) -> None:
                     cv2.imshow('MediaPipe Pose1', draw_frame)
                 else:
                     cv2.imshow('MediaPipe Pose1', frame)
+                cv2.waitKey(1)
 
 
                 fps = 1 / (time.time() - start_time)

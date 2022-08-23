@@ -70,11 +70,56 @@ def face_detection(frame, depth, face_mesh, human_infos = None):
             center_eyes_x = (left_eye_box[0][0] + left_eye_box[0][2]) / 2
             center_eyes_y = (left_eye_box[0][1] + left_eye_box[0][3]) / 2
             center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)]
+            print(center_eyes_z)
             human_info._put_data([center_eyes_x, center_eyes_y, center_eyes_z], 'center_eyes')
             if index >= len(human_infos):
                 human_infos.append(human_info)
     if face_results.multi_face_landmarks:
         return human_infos, len(face_results.multi_face_landmarks)
+    else:
+        return human_infos, 0
+
+def new_face_detection(frame, depth, net, human_infos = None) -> object:
+    height, width = frame.shape[:2]
+    blob = cv2.dnn.blobFromImage(cv2.resize(frame,(300,300)),1.0,(300,300),(104.0, 177.0, 123.0))
+    net.setInput(blob, "data")
+
+    detections = net.forward("detection_out")
+    detected_face = 0
+    if not human_infos:
+        human_infos = []
+    for index in range(0, detections.shape[2]):
+
+        confidence = detections[0, 0, index, 2]
+
+        # filter detections by confidence greater than minimum value
+        if confidence > 0.5:
+            detected_face += 1
+            if detected_face > len(human_infos):
+                human_info = HumanInfo()
+                if len(human_infos)>0:
+                    human_info = human_info_deep_copy(human_infos, human_info)
+            else:
+                human_info = human_infos[detected_face-1]
+            face_box = detections[0, 0, index, 3:7] * np.array([width, height, width, height])
+            (startX, startY, endX, endY) = face_box.astype("int")
+        # draw the bounding box and write confidence
+            text = "{:.2f}%".format(confidence * 100)
+            y = startY - 10 if startY - 10 > 10 else startY + 10
+            #cv2.rectangle(frame, (startX, startY), (endX, endY),(255, 255, 255), 2)
+            #cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
+
+            human_info.face_box = face_box # face box is not used for action recognition. Thus, face_box is not list.
+            human_info.face_detection_confidence = confidence
+
+            center_eyes_x = int((startX + endX) / 2)
+            center_eyes_y = int((startY + endY) / 2)
+            center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)]
+            human_info._put_data([center_eyes_x, center_eyes_y, center_eyes_z], 'center_eyes')
+            if detected_face >= len(human_infos):
+                human_infos.append(human_info)
+    if detections is not None:
+        return human_infos, detected_face
     else:
         return human_infos, 0
 
@@ -100,10 +145,17 @@ def human_info_deep_copy(human_infos, human_info):
     human_info.human_state = reference_human_info.human_state # Action recognition result
     return human_info
 
-def eye_box_visualization(draw_frame, human_infos):
+def face_box_visualization(draw_frame, human_infos, flip_mode):
     for human_info in human_infos:
+        if flip_mode:
+            height, width = draw_frame.shape[:2]
+            x1, x2, y1, y2 = int(width - human_info.face_box[0]), int(width - human_info.face_box[2]), int(human_info.face_box[1]), int(human_info.face_box[3])
+        else:
+            x1, x2, y1, y2 = int(human_info.face_box[0]), int(human_info.face_box[2]), int(human_info.face_box[1]), int(human_info.face_box[3])
         cv2.rectangle(draw_frame, 
-                     (int(human_info.left_eye_box[0][0]), int(human_info.left_eye_box[0][1])), 
-                     (int(human_info.left_eye_box[0][2]), int(human_info.left_eye_box[0][3])), 
+                     (x1, y1), 
+                     (x2, y2), 
                      (0, 0, 255), 3)
+        text = "{:.2f}%".format(human_info.face_detection_confidence * 100)
+        cv2.putText(draw_frame, text, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
     return draw_frame
