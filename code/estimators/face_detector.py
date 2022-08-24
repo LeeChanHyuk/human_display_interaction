@@ -8,7 +8,7 @@ from estimators.head_pose_estimator import box_extraction
 
 def calibration(human_info, real_sense_calibration = True):
     center_eyes = human_info.center_eyes[-1].copy()
-    calib_parameter = [0.9245, -0.004, 0.0584, -0.0242, 0.9475, -0.0083, 0.0208, 0.1013, 0.8956, -32.2596, 121.3725, 26.666 + 200 + 350]
+    calib_parameter = [0.9245, -0.004, 0.0584, -0.0242, 0.9475, -0.0083, 0.0208, 0.1013, 0.8956, -32.2596 - 32, 121.3725 + 100, 26.666 + 50]
     # y = 240 - y
     # x = x - 320
     # for D435
