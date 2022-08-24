@@ -58,7 +58,7 @@ mode = 3
 precise_value_visualization = True
 
 # Visualization settings
-text_visualization = True
+text_visualization = False
 flip_mode = True
 
 # Landmark / action names
