@@ -139,6 +139,7 @@ def main(video_folder_path=None) -> None:
                 # Input visualization
                 frame_copy = frame.copy()
                 cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
+                cv2.namedWindow('MediaPipe Pose1', cv2.WINDOW_NORMAL)
                 cv2.waitKey(1)
 
                 # Media pipe face detection
@@ -173,7 +174,6 @@ def main(video_folder_path=None) -> None:
 
                     # Visualization
                     draw_frame = face_box_visualization(draw_frame, human_infos, flip_mode)
-                    cv2.imshow('Pose1', draw_frame)
                     draw_frame = visualization(draw_frame, depth, human_infos[0], text_visualization, flip_mode)
 
                     # Calibration
@@ -182,7 +182,6 @@ def main(video_folder_path=None) -> None:
                     # Networking with renderer
                     networking(human_infos[0], mode, base_path)
 
-                cv2.namedWindow('MediaPipe Pose1')
                 if draw_frame is not None:
                     cv2.imshow('MediaPipe Pose1', draw_frame)
                 else:
