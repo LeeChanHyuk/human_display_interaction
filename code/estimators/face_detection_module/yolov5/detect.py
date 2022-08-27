@@ -50,6 +50,7 @@ from estimators.face_detection_module.yolov5.utils.general import (LOGGER, Profi
 from estimators.face_detection_module.yolov5.utils.plots import Annotator, colors, save_one_box
 from estimators.face_detection_module.yolov5.utils.torch_utils import select_device, smart_inference_mode
 from user_information.human import HumanInfo
+from scipy.stats import mode
 
 
 @smart_inference_mode()
@@ -197,19 +198,29 @@ def human_info_deep_copy(human_infos, human_info):
 	human_info.human_state = reference_human_info.human_state # Action recognition result
 	return human_info
 
-def yolo_initialization(frame_shape, weights, data):
+def yolo_initialization(frame_shape, weights, data, depth_face_tracker):
     device = select_device('0')
     model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size((frame_shape[1], frame_shape[1]), s=stride)  # check image size
 
     # Run inference
-    model.warmup(imgsz=(1 if pt else 1, 3, *imgsz))  # warmup
+    if depth_face_tracker:
+        model.warmup(imgsz=(1 if pt else 1, 4, *imgsz))  # warmup
+    else:
+        model.warmup(imgsz=(1 if pt else 1, 3, *imgsz))  # warmup
     dt = (Profile(), Profile(), Profile())
     return model, dt, device
 
 
-def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, frame_shape, human_infos = None):
+def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, frame_shape, human_infos = None, depth_face_tracker = False):
+    if depth_face_tracker:
+        depth = cv2.inRange(depth, 300, 2000)
+        depth = cv2.normalize(depth, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        #cv2.imshow('depth_image', depth)
+        #cv2.waitKey(1)
+        depth = np.expand_dims(depth, axis=2)
+        im = np.concatenate([im, depth], axis=2)
     start_time = time.time()
     height, width, channel = im.shape
     gn = torch.tensor(im.shape)[[1, 0, 1, 0]]  # normalization gain whwh
@@ -267,7 +278,10 @@ def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, fram
 
                 center_eyes_x = int((x1 + x2) / 2)
                 center_eyes_y = int((y1 + y2) / 2)
-                center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)]
+                if depth_face_tracker:
+                    center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)][0]
+                else:
+                    center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)]
                 human_info._put_data([center_eyes_x, center_eyes_y, center_eyes_z], 'center_eyes')
                 if det_result_num >= len(human_infos):
                     human_infos.append(human_info)

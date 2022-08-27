@@ -127,13 +127,6 @@ def resnet_face_detection(frame, depth, net, human_infos = None) -> object:
     else:
         return human_infos, 0
 
-def yolov5(frame, draw_frame):
-    model, dt, device = yolo_initialization(
-        weights= WindowsPath(os.path.join(ROOT, 'face_detection_module', 'yolov5', 'weights', 'brightness_augmentation_best.pt')),
-        data = WindowsPath(os.path.join(ROOT, 'face_detection_module', 'yolov5', 'data', 'coco128.yaml'))
-    )
-    face_box = yolo_face_detection(frame, dt, device, model, draw_frame, view_img=True)
-
 def human_info_deep_copy(human_infos, human_info):
     reference_human_info = human_infos[-1]
     human_info.center_eyes = reference_human_info.center_eyes

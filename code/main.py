@@ -62,6 +62,7 @@ precise_value_visualization = True
 # Visualization settings
 text_visualization = False
 flip_mode = True
+depth_face_tracker = False
 
 # Landmark / action names
 actions = [ 'left', 'left-up', 'up',
@@ -86,12 +87,20 @@ def main(video_folder_path=None) -> None:
     net = cv2.dnn.readNetFromCaffe(
         os.path.join(base_path, "estimators/deploy.prototxt.txt"), 
         os.path.join(base_path, "estimators/res10_300x300_ssd_iter_140000.caffemodel"))
-
-    model, dt, device = yolo_initialization(
-        frame_shape = (480, 640, 3),
-        weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'brightness_augmentation_best.pt')),
-        data = WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml'))
-    )
+    if depth_face_tracker:
+        model, dt, device = yolo_initialization(
+            frame_shape = (480, 640, 3),
+            weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'depth', 'best.pt')),
+            data = WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml')),
+            depth_face_tracker=depth_face_tracker
+        )
+    else:
+        model, dt, device = yolo_initialization(
+            frame_shape = (480, 640, 3),
+            weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'brightness_augmentation_best.pt')),
+            data = WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml')),
+            depth_face_tracker=depth_face_tracker
+        )
 
     print('Face detection module is initialized')
 
@@ -160,7 +169,8 @@ def main(video_folder_path=None) -> None:
                     draw_frame=draw_frame, 
                     view_img = True, 
                     frame_shape = (3, 480, 640), 
-                    human_infos= human_infos)
+                    human_infos= human_infos,
+                    depth_face_tracker=depth_face_tracker)
 
                 if face_num > 0:
 
