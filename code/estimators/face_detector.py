@@ -1,9 +1,13 @@
+import os
 import math
+from pathlib import WindowsPath
 import cv2
 import numpy as np
 
 from user_information.human import HumanInfo
 from estimators.head_pose_estimator import box_extraction
+from estimators.face_detection_module.yolov5.detect import yolo_initialization, yolo_face_detection
+
 
 
 def calibration(human_info, real_sense_calibration = True):
@@ -79,7 +83,7 @@ def face_detection(frame, depth, face_mesh, human_infos = None):
     else:
         return human_infos, 0
 
-def new_face_detection(frame, depth, net, human_infos = None) -> object:
+def resnet_face_detection(frame, depth, net, human_infos = None) -> object:
     height, width = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(cv2.resize(frame,(300,300)),1.0,(300,300),(104.0, 177.0, 123.0))
     net.setInput(blob, "data")
@@ -122,6 +126,13 @@ def new_face_detection(frame, depth, net, human_infos = None) -> object:
         return human_infos, detected_face
     else:
         return human_infos, 0
+
+def yolov5(frame, draw_frame):
+    model, dt, device = yolo_initialization(
+        weights= WindowsPath(os.path.join(ROOT, 'face_detection_module', 'yolov5', 'weights', 'brightness_augmentation_best.pt')),
+        data = WindowsPath(os.path.join(ROOT, 'face_detection_module', 'yolov5', 'data', 'coco128.yaml'))
+    )
+    face_box = yolo_face_detection(frame, dt, device, model, draw_frame, view_img=True)
 
 def human_info_deep_copy(human_infos, human_info):
     reference_human_info = human_infos[-1]

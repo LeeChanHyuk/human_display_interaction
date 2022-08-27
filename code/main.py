@@ -6,6 +6,7 @@
 # Gaze estimation module is from david-wb (https://github.com/david-wb/gaze-estimation)
 
 from lib2to3.pytree import BasePattern
+from pathlib import WindowsPath
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -35,13 +36,14 @@ from estimators.action_recognizer import inference
 from estimators.gaze_estimation_module.util.gaze import draw_gaze
 from estimators.body_pose_estimator import body_keypoint_extractor, upside_body_pose_calculator
 import estimators.head_pose_estimation_module.service as service
-from estimators.face_detector import face_box_visualization, face_detection, new_face_detection
+from estimators.face_detector import face_box_visualization, face_detection, resnet_face_detection
 from estimators.face_detector import calibration
 from estimators.head_pose_estimator import head_pose_estimation
 from estimators.main_user_classifier import main_user_classification
 from estimators.body_pose_estimator import body_pose_estimation, body_keypoint_extractor
 from estimators.action_recognizer import action_recognition
 from zmq_router import networking
+from estimators.face_detection_module.yolov5.detect import yolo_face_detection, yolo_initialization
 
 # User class
 from user_information.human import HumanInfo
@@ -77,12 +79,20 @@ def main(video_folder_path=None) -> None:
     iteration = 0
     human_infos = None
     draw_frame = None
+    ROOT = os.path.dirname(os.path.abspath(__file__))
 
     # Initialize face detection module
     fa = service.DepthFacialLandmarks(os.path.join(base_path, "estimators/head_pose_estimation_module/weights/sparse_face.tflite"))
     net = cv2.dnn.readNetFromCaffe(
         os.path.join(base_path, "estimators/deploy.prototxt.txt"), 
         os.path.join(base_path, "estimators/res10_300x300_ssd_iter_140000.caffemodel"))
+
+    model, dt, device = yolo_initialization(
+        frame_shape = (480, 640, 3),
+        weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'brightness_augmentation_best.pt')),
+        data = WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml'))
+    )
+
     print('Face detection module is initialized')
 
     # Initialize head pose estimation module
@@ -105,7 +115,7 @@ def main(video_folder_path=None) -> None:
             max_num_faces=3,
             min_detection_confidence=0.5) as face_mesh:
             print("Initialization step is done. Please turn on the super multiview renderer")
-
+            time_stamp1, time_stamp2, time_stamp3, time_stamp4, time_stamp5 = 0, 0, 0, 0,0 
             while True:
                 # Load mode (0: No tracking / 1: Eye tracking / 2: Eye tracking + Head pose estimation / 3: Eye tracking + Head pose estimation + Action recongition)
                 mode = load_mode(base_path=base_path) # mode
@@ -115,11 +125,11 @@ def main(video_folder_path=None) -> None:
                 # Get input
                 start_time = time.time()
                 if not video_folder_path:
-                    frame, depth = get_input(pipeline=pipeline, align=align, video_path=video_folder_path)
+                    frame, depth = get_input(pipeline=pipeline, align=align, video_path=video_folder_path) # 5ms
                 else: # Load next video automatically.
                     (rgb_ret, frame), (depth_ret, depth) = rgb_cap.read(), depth_cap.read()
                     if depth_ret:
-                        depth = cv2.cvtColor(depth, cv2.COLOR_RGB2GRAY)
+                        depth = depth[: ,:, 0]
                     else:
                         if current_video_index + 1 < total_video_num:
                             current_video_index += 1
@@ -136,19 +146,23 @@ def main(video_folder_path=None) -> None:
                 # Get frame information
                 height, width = frame.shape[:2]
                 
-                # Input visualization
-                frame_copy = frame.copy()
-                cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
-                cv2.namedWindow('MediaPipe Pose1', cv2.WINDOW_NORMAL)
-                cv2.waitKey(1)
+                # face detection
+                if flip_mode:
+                    draw_frame = cv2.flip(frame.copy(), 1)
 
-                # Media pipe face detection
-                human_infos, face_num = new_face_detection(frame, depth, net, human_infos)
+                #human_infos, face_num = resnet_face_detection(frame, depth, net, human_infos)
+                human_infos, face_num = yolo_face_detection( # 17ms ~ 21ms
+                    im=frame, 
+                    depth = depth, 
+                    dt=dt, 
+                    device = device, 
+                    model = model, 
+                    draw_frame=draw_frame, 
+                    view_img = True, 
+                    frame_shape = (3, 480, 640), 
+                    human_infos= human_infos)
 
-                if face_num:
-                    draw_frame = frame.copy()
-                    if flip_mode:
-                        draw_frame = cv2.flip(draw_frame, 1)
+                if face_num > 0:
 
                     # Head pose estimation
                     if mode > 1:
@@ -173,27 +187,23 @@ def main(video_folder_path=None) -> None:
                         human_infos = [human_infos[0]]
 
                     # Visualization
-                    draw_frame = face_box_visualization(draw_frame, human_infos, flip_mode)
-                    draw_frame = visualization(draw_frame, depth, human_infos[0], text_visualization, flip_mode)
+                    draw_frame = face_box_visualization(draw_frame, human_infos, flip_mode) # 0.5ms
+                    draw_frame = visualization(draw_frame, depth, human_infos[0], text_visualization, flip_mode) # 0.5ms
 
                     # Calibration
-                    calibration(human_infos[0])
+                    calibration(human_infos[0]) # 0.5ms
 
                     # Networking with renderer
-                    networking(human_infos[0], mode, base_path)
-
+                    networking(human_infos[0], mode, base_path) # 0.5ms
                 if draw_frame is not None:
                     cv2.imshow('MediaPipe Pose1', draw_frame)
                 else:
-                    cv2.imshow('MediaPipe Pose1', frame)
+                    cv2.imshow('MediaPipe Pose1', cv2.flip(frame, 1))
                 cv2.waitKey(1)
 
 
                 fps = 1 / (time.time() - start_time)
-                #print(fps)
-                pressed_key = cv2.waitKey(1)
-                if pressed_key == 27:
-                    break
+                print(fps)
 
 def main_function():
     #main(video_folder_path='C:/Users/user/Desktop/test')

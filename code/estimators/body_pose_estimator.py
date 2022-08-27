@@ -201,8 +201,6 @@ def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height
 
 def body_pose_estimation(pose, frame, draw_frame, depth, human_info):
     height, width = frame.shape[:2]
-    cv2.imshow('test', frame)
-    cv2.waitKey(1)
     results = pose.process(frame)
     if results.pose_landmarks:
         body_landmarks= results.pose_landmarks
