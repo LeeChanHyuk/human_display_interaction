@@ -273,7 +273,8 @@ def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, fram
                 x2, y2 = int(x1 + w -1), int(y1 + h - 1)
 
 				# Put the info into the human_info object
-                human_info.face_box = [x1, y1, x2, y2] # face box is not used for action recognition. Thus, face_box is not list.
+                human_info.face_box = np.array([x1, y1, x2, y2]) # face box is not used for action recognition. Thus, face_box is not list.
+                human_info.face_box = np.expand_dims(human_info.face_box, axis=0)
                 human_info.face_detection_confidence = round(conf.item(), 3)
 
                 center_eyes_x = int((x1 + x2) / 2)

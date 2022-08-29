@@ -55,15 +55,18 @@ def draw_gaze_information(zero_array, width, height, x, y, z, gazes): # [width, 
 	cv2.putText(zero_array, ' Right_y:' + str(round(right_gaze[0], 2)), (int((width/40) * 29), int((height/20) * 17.5)), 1, 1.8, (255, 255, 0), 3)
 	return zero_array
 
-def draw_body_keypoints(frame, keypoints):
-	colors = [(255, 0, 0),
+def draw_body_keypoints(frame, keypoints, flip_mode):
+    colors = [(255, 0, 0),
 	(0, 255, 0),
 	(0, 0, 255),
 	(255, 255, 0),
 	(0, 255, 255)]
-	for index, keypoint in enumerate(keypoints):
-		cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, colors[index], 3)
-	return frame
+    for index, keypoint in enumerate(keypoints):
+        if flip_mode:
+            cv2.circle(frame, (int(-1 * keypoint[0]), int(keypoint[1])), 3, colors[index], 3)
+        else:
+            cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, colors[index], 3)
+    return frame
 
 def visualization(draw_frame, depth, human_info, text_visualization, flip_mode):
     height, width = draw_frame.shape[:2]

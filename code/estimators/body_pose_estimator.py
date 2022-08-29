@@ -199,7 +199,7 @@ def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height
     return left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye
 
 
-def body_pose_estimation(pose, frame, draw_frame, depth, human_info):
+def body_pose_estimation(pose, frame, draw_frame, depth, human_info, flip_mode):
     height, width = frame.shape[:2]
     results = pose.process(frame)
     if results.pose_landmarks:
@@ -208,7 +208,7 @@ def body_pose_estimation(pose, frame, draw_frame, depth, human_info):
             for lmk in body_landmarks.landmark], dtype=np.float32)
 
         left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye3 = body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height)
-        frame = visualization_tool.draw_body_keypoints(draw_frame, [left_shoulder, right_shoulder, center_stomach, center_mouth, center_eye3])
+        draw_frame = visualization_tool.draw_body_keypoints(draw_frame, [left_shoulder, right_shoulder, center_stomach, center_mouth, center_eye3], flip_mode)
         upper_body_yaw, upper_body_pitch, upper_body_roll = upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
         upper_body_yaw = upper_body_yaw * 180 / math.pi
         upper_body_pitch = upper_body_pitch * 180 / math.pi

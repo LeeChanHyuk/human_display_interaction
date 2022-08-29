@@ -47,7 +47,7 @@ from estimators.face_detection_module.yolov5.detect import yolo_face_detection, 
 
 # User class
 from user_information.human import HumanInfo
-from utils import preprocessing
+from main_utils import preprocessing
 
 # Mediapipe visualization objects
 mp_drawing = mp.solutions.drawing_utils
@@ -186,7 +186,7 @@ def main(video_folder_path=None) -> None:
                         # frame = gaze_estimation(frame_copy, frame, human_infos[main_user_index], visualization)
 
                         # Body pose estimation
-                        draw_frame = body_pose_estimation(pose, frame, draw_frame, depth, human_infos[0])
+                        draw_frame = body_pose_estimation(pose, frame, draw_frame, depth, human_infos[0], flip_mode)
 
                         # Action recognition
                         draw_frame = action_recognition(frame, draw_frame, human_infos[0], fps)
@@ -213,7 +213,7 @@ def main(video_folder_path=None) -> None:
 
 
                 fps = 1 / (time.time() - start_time)
-                print(fps)
+                #print(fps)
 
 def main_function():
     #main(video_folder_path='C:/Users/user/Desktop/test')

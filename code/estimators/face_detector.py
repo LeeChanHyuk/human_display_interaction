@@ -153,9 +153,9 @@ def face_box_visualization(draw_frame, human_infos, flip_mode):
     for human_info in human_infos:
         if flip_mode:
             height, width = draw_frame.shape[:2]
-            x1, x2, y1, y2 = int(width - human_info.face_box[0]), int(width - human_info.face_box[2]), int(human_info.face_box[1]), int(human_info.face_box[3])
+            x1, x2, y1, y2 = int(width - human_info.face_box[0][0]), int(width - human_info.face_box[0][2]), int(human_info.face_box[0][1]), int(human_info.face_box[0][3])
         else:
-            x1, x2, y1, y2 = int(human_info.face_box[0]), int(human_info.face_box[2]), int(human_info.face_box[1]), int(human_info.face_box[3])
+            x1, x2, y1, y2 = int(human_info.face_box[0][0]), int(human_info.face_box[0][2]), int(human_info.face_box[0][1]), int(human_info.face_box[0][3])
         cv2.rectangle(draw_frame, 
                      (x1, y1), 
                      (x2, y2), 

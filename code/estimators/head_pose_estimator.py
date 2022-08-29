@@ -6,6 +6,7 @@ import estimators.head_pose_estimation_module.service as service
 import cv2
 import time
 import os
+import numpy as np
 
 def box_extraction(face_landmarks, width, height):
     """Params

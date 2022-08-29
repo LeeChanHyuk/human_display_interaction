@@ -13,7 +13,7 @@ import cv2
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 from template.trainer.architecture import action_transformer
-from utils import preprocessing
+from main_utils import preprocessing
 
 def build_model(num_classes=-1):
     base_path = os.path.dirname(os.path.abspath(__file__))
@@ -79,7 +79,7 @@ def inference(pose_sequence):
         action_vote[results[i]] += 1
     results[-1] = y_pred
     action_vote[results[-1]] += 1
-    #print(action_vote)
+    print(action_vote)
     max_voted_action_val = np.max(action_vote)
     max_voted_action_class = np.argmax(action_vote)
     
@@ -113,12 +113,11 @@ def action_recognition(frame, draw_frame, human_info, fps):
         network_input = np.expand_dims(np.array(network_input),axis=0)
         human_state = inference(network_input)
         human_info.human_state = human_state
-        draw_frame = cv2.flip(draw_frame, 1)
         cv2.putText(draw_frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
         return draw_frame
     else:
         print("The body and head pose are not estimated normally. Please check the state of the human.")
-        return frame
+        return draw_frame
 
 results = np.zeros((20), dtype=np.uint8)
 model = load_model_for_inference(0)
