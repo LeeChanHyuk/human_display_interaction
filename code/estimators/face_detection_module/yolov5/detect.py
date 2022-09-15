@@ -213,7 +213,7 @@ def yolo_initialization(frame_shape, weights, data, depth_face_tracker):
     return model, dt, device
 
 
-def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, frame_shape, human_infos = None, depth_face_tracker = False):
+def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, frame_shape, human_infos = None, depth_face_tracker = False, model_dict = None, model_name = None):
     if depth_face_tracker:
         depth = cv2.inRange(depth, 300, 2000)
         depth = cv2.normalize(depth, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
@@ -258,6 +258,8 @@ def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, fram
             for *xyxy, conf, cls in reversed(det):
                 if conf.item() < 0.5:
                     continue
+                if model_dict:
+                    model_dict[model_name] += 1
                 det_result_num += 1
                 # Check new user
                 if det_result_num > len(human_infos):

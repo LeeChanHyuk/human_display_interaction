@@ -11,8 +11,8 @@ def realsense_initialization():
     pipeline = rs.pipeline()
     # Configure streams
     config = rs.config()
-    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config.enable_stream(rs.stream.depth, 960, 960, rs.format.z16, 60)
+    config.enable_stream(rs.stream.color, 960, 960, rs.format.bgr8, 60)
 
     # Start streaming
     pipeline.start(config)
@@ -23,19 +23,21 @@ def video_loader_initialization(path):
     rgb_videos = []
     depth_videos = []
     for file in files:
-        if 'rgb' in file:
-            rgb_videos.append(file)
-        elif 'depth' in file:
+        if 'depth' in file:
             depth_videos.append(file)
+        else:
+            rgb_videos.append(file)
     rgb_videos.sort()
-    depth_videos.sort()
     rgb_caps = []
-    depth_caps = []
-    for rgb_video, depth_video in zip(rgb_videos, depth_videos):
+    for rgb_video in rgb_videos:
         rgb_cap = cv2.VideoCapture(os.path.join(path, rgb_video))
-        depth_cap = cv2.VideoCapture(os.path.join(path, depth_video))
         rgb_caps.append(rgb_cap)
-        depth_caps.append(depth_cap)
+    if len(depth_videos) > 0:
+        depth_videos.sort()
+        depth_caps = []
+        for depth_video in depth_videos:
+            depth_cap = cv2.VideoCapture(os.path.join(path, depth_video))
+            depth_caps.append(depth_cap)
     return rgb_caps, depth_caps, len(rgb_caps)
 
 def get_input(pipeline=None, align=None, rgb_cap=None, depth_cap=None, video_path=None):

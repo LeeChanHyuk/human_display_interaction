@@ -74,7 +74,7 @@ def face_detection(frame, depth, face_mesh, human_infos = None):
             center_eyes_x = (left_eye_box[0][0] + left_eye_box[0][2]) / 2
             center_eyes_y = (left_eye_box[0][1] + left_eye_box[0][3]) / 2
             center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)]
-            print(center_eyes_z)
+            #print(center_eyes_z)
             human_info._put_data([center_eyes_x, center_eyes_y, center_eyes_z], 'center_eyes')
             if index >= len(human_infos):
                 human_infos.append(human_info)

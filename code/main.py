@@ -80,24 +80,23 @@ def main(video_folder_path=None) -> None:
     iteration = 0
     human_infos = None
     draw_frame = None
+    visualization_fps = 0
+    networking_fps = 0
     ROOT = os.path.dirname(os.path.abspath(__file__))
 
     # Initialize face detection module
     fa = service.DepthFacialLandmarks(os.path.join(base_path, "estimators/head_pose_estimation_module/weights/sparse_face.tflite"))
-    net = cv2.dnn.readNetFromCaffe(
-        os.path.join(base_path, "estimators/deploy.prototxt.txt"), 
-        os.path.join(base_path, "estimators/res10_300x300_ssd_iter_140000.caffemodel"))
     if depth_face_tracker:
         model, dt, device = yolo_initialization(
             frame_shape = (480, 640, 3),
-            weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'depth', 'best.pt')),
+            weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'color_augmentation', 'best.pt')),
             data = WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml')),
             depth_face_tracker=depth_face_tracker
         )
     else:
         model, dt, device = yolo_initialization(
             frame_shape = (480, 640, 3),
-            weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'brightness_augmentation_best.pt')),
+            weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'color_augmentation', '30.pt')),
             data = WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml')),
             depth_face_tracker=depth_face_tracker
         )
@@ -114,7 +113,10 @@ def main(video_folder_path=None) -> None:
     else:
         rgb_caps, depth_caps, total_video_num = video_loader_initialization(video_folder_path)
         current_video_index = 0
-        rgb_cap, depth_cap = rgb_caps[current_video_index], depth_caps[current_video_index]
+        if len(depth_caps) > 0:
+            rgb_cap, depth_cap = rgb_caps[current_video_index], depth_caps[current_video_index]
+        else:
+            rgb_cap = rgb_caps[current_video_index]
     # Define pose estimation & face detection thresholds
     with mp_pose.Pose(
         min_detection_confidence=0.5,
@@ -124,7 +126,6 @@ def main(video_folder_path=None) -> None:
             max_num_faces=3,
             min_detection_confidence=0.5) as face_mesh:
             print("Initialization step is done. Please turn on the super multiview renderer")
-            time_stamp1, time_stamp2, time_stamp3, time_stamp4, time_stamp5 = 0, 0, 0, 0,0 
             while True:
                 # Load mode (0: No tracking / 1: Eye tracking / 2: Eye tracking + Head pose estimation / 3: Eye tracking + Head pose estimation + Action recongition)
                 mode = load_mode(base_path=base_path) # mode
@@ -134,7 +135,7 @@ def main(video_folder_path=None) -> None:
                 # Get input
                 start_time = time.time()
                 if not video_folder_path:
-                    frame, depth = get_input(pipeline=pipeline, align=align, video_path=video_folder_path) # 5ms
+                    frame, depth = get_input(pipeline=pipeline, align=align, video_path=video_folder_path) # 6~7ms when the detection fps is not less that 60 fps
                 else: # Load next video automatically.
                     (rgb_ret, frame), (depth_ret, depth) = rgb_cap.read(), depth_cap.read()
                     if depth_ret:
@@ -158,7 +159,6 @@ def main(video_folder_path=None) -> None:
                 # face detection
                 if flip_mode:
                     draw_frame = cv2.flip(frame.copy(), 1)
-
                 #human_infos, face_num = resnet_face_detection(frame, depth, net, human_infos)
                 human_infos, face_num = yolo_face_detection( # 17ms ~ 21ms
                     im=frame, 
@@ -171,6 +171,8 @@ def main(video_folder_path=None) -> None:
                     frame_shape = (3, 480, 640), 
                     human_infos= human_infos,
                     depth_face_tracker=depth_face_tracker)
+
+                #human_infos, face_num = face_detection(frame, depth, face_mesh, human_infos)
 
                 if face_num > 0:
 
@@ -211,13 +213,13 @@ def main(video_folder_path=None) -> None:
                     cv2.imshow('MediaPipe Pose1', cv2.flip(frame, 1))
                 cv2.waitKey(1)
 
-
-                fps = 1 / (time.time() - start_time)
-                #print(fps)
+                fps = (time.time() - start_time)
+                #print(fps#
+                #print(input_get_fps, face_detection_fps, only_fps, visualization_fps, networking_fps, fps)
 
 def main_function():
     #main(video_folder_path='C:/Users/user/Desktop/test')
-    main()
+    main(video_folder_path=os.path.join())
 
 if __name__ == "__main__":
     main_function()
