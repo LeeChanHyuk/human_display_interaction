@@ -8,7 +8,6 @@ from efficientnet_pytorch import EfficientNet
 from timm.models import create_model
 from . import lstm
 from . import action_transformer
-from . import graph_neural_network
 from .action_transformer_result_comparison import Video_action_transformer_v1, Video_action_transformer_v2
 def create(conf, num_classes=None):
     base, architecture_name = [l.lower() for l in conf['type'].split('/')]

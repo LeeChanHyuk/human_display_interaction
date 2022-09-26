@@ -1,7 +1,6 @@
 # init에서는 dataset을 create하는 함수를 만들어야지.
 from fileinput import filename
 import logging
-from tkinter import N
 from matplotlib.pyplot import axis
 import torch
 import torchvision

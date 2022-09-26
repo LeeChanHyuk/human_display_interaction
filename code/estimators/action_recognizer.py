@@ -16,17 +16,8 @@ from template.trainer.architecture import action_transformer
 from main_utils import preprocessing
 
 def build_model(num_classes=-1):
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    base_path_list = list(base_path.split('\\'))
-    base_path_list.pop()
-    base_path_list.pop()
-    base_path = base_path_list[0]
-    for index, x in enumerate(base_path_list):
-        if index == 0:
-            base_path += '/'
-        else:
-            base_path = os.path.join(base_path, x)
-    with open(os.path.join(base_path, "template\\conf\\architecture\\action_transformer.yaml")) as f:
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    with open(os.path.join(base_path, "template/conf/architecture/action_transformer.yaml")) as f:
         list_doc = yaml.load(f.read(), Loader=yaml.FullLoader)
         order = list_doc['mode']
         architecture = action_transformer.ActionTransformer3(

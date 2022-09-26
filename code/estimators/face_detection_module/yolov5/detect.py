@@ -222,6 +222,8 @@ def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, fram
         depth = np.expand_dims(depth, axis=2)
         im = np.concatenate([im, depth], axis=2)
     start_time = time.time()
+    im = cv2.resize(im, (640, 640))
+    depth = cv2.resize(depth, (640, 640))
     height, width, channel = im.shape
     gn = torch.tensor(im.shape)[[1, 0, 1, 0]]  # normalization gain whwh
     im = im[None, :]

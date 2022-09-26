@@ -1,4 +1,3 @@
-from msilib.schema import Class
 from user_information.stabilizer import Stabilizer
 import numpy as np
 
@@ -20,8 +19,8 @@ class StabilizersWithKalmanFilter():
 			state_num=2,
 			measure_num=1,
 			cov_process=0.1,
-			cov_measure=0.1
-		) for i in range(3)]
+			cov_measure=0.1)
+			for i in range(3)]
 		self.center_mouth_stabilizers = [Stabilizer(
 			state_num=2,
 			measure_num=1,

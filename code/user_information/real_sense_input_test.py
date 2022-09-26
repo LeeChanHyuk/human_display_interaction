@@ -1,9 +1,6 @@
-import os
-
-import pyrealsense2 as rs
 import cv2
+import pyrealsense2 as rs
 import numpy as np
-
 
 def realsense_initialization():
     align_to = rs.stream.color
@@ -17,29 +14,6 @@ def realsense_initialization():
     # Start streaming
     pipeline.start(config)
     return pipeline, align
-
-def video_loader_initialization(path):
-    files = os.listdir(path)
-    rgb_videos = []
-    depth_videos = []
-    for file in files:
-        if 'depth' in file:
-            depth_videos.append(file)
-        else:
-            rgb_videos.append(file)
-    rgb_videos.sort()
-    rgb_caps = []
-    for rgb_video in rgb_videos:
-        rgb_cap = cv2.VideoCapture(os.path.join(path, rgb_video))
-        rgb_caps.append(rgb_cap)
-    if len(depth_videos) > 0:
-        depth_videos.sort()
-        depth_caps = []
-        for depth_video in depth_videos:
-            depth_cap = cv2.VideoCapture(os.path.join(path, depth_video))
-            depth_caps.append(depth_cap)
-    return rgb_caps, depth_caps, len(rgb_caps)
-
 def get_input(pipeline=None, align=None, rgb_cap=None, depth_cap=None, video_path=None):
     # Get input
     if not video_path:
@@ -53,3 +27,19 @@ def get_input(pipeline=None, align=None, rgb_cap=None, depth_cap=None, video_pat
         ret, frame = rgb_cap.read()
         ret, depth = depth_cap.read()
     return frame, depth
+#pipeline, align = realsense_initialization()
+#frame, depth = get_input(pipeline, align)
+import usb
+busses = usb.busses()
+for bus in busses:
+    devices = bus.devices
+    for dev in devices:
+        print("Device:", dev.filename)
+        print("  idVendor: %d (0x%04x)" % (dev.idVendor, dev.idVendor))
+        print("  idProduct: %d (0x%04x)" % (dev.idProduct, dev.idProduct))
+cap = cv2.VideoCapture(0)
+while 1:
+    ret, frame = cap.read()
+    print(ret)
+    cv2.imshow('frame', frame)
+    cv2.waitKey(1)

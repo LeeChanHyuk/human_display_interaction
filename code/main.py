@@ -5,8 +5,6 @@
 # Head pose estimation module is from 1996scarlet (https://github.com/1996scarlet/Dense-Head-Pose-Estimation)
 # Gaze estimation module is from david-wb (https://github.com/david-wb/gaze-estimation)
 
-from lib2to3.pytree import BasePattern
-from pathlib import WindowsPath
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -89,15 +87,15 @@ def main(video_folder_path=None) -> None:
     if depth_face_tracker:
         model, dt, device = yolo_initialization(
             frame_shape = (480, 640, 3),
-            weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'color_augmentation', 'best.pt')),
-            data = WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml')),
+            weights= os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'color_augmentation', 'best.pt'),
+            data = os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml'),
             depth_face_tracker=depth_face_tracker
         )
     else:
         model, dt, device = yolo_initialization(
-            frame_shape = (480, 640, 3),
-            weights= WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'color_augmentation', '30.pt')),
-            data = WindowsPath(os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml')),
+            frame_shape = (640, 640, 3),
+            weights= os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'hue_rgb_strong_best.torchscript'),
+            data = os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml'),
             depth_face_tracker=depth_face_tracker
         )
 
@@ -117,6 +115,7 @@ def main(video_folder_path=None) -> None:
             rgb_cap, depth_cap = rgb_caps[current_video_index], depth_caps[current_video_index]
         else:
             rgb_cap = rgb_caps[current_video_index]
+    cv2.namedWindow('MediaPipe Pose1', cv2.WINDOW_NORMAL)
     # Define pose estimation & face detection thresholds
     with mp_pose.Pose(
         min_detection_confidence=0.5,
@@ -213,13 +212,13 @@ def main(video_folder_path=None) -> None:
                     cv2.imshow('MediaPipe Pose1', cv2.flip(frame, 1))
                 cv2.waitKey(1)
 
-                fps = (time.time() - start_time)
-                #print(fps#
+                fps = 1/(time.time() - start_time)
+                print(fps)
                 #print(input_get_fps, face_detection_fps, only_fps, visualization_fps, networking_fps, fps)
 
 def main_function():
     #main(video_folder_path='C:/Users/user/Desktop/test')
-    main(video_folder_path=os.path.join())
+    main(video_folder_path = None)
 
 if __name__ == "__main__":
     main_function()
