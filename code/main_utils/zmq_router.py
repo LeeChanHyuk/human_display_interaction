@@ -11,6 +11,7 @@ def router_function():
     to_renderer.bind("tcp://*:5558")
     line = ['0', '0 0 0', '0 0 0', 'standard'] # tracking_mode / eye_position / head_rotation / human action
     base_path = os.path.dirname(os.path.abspath(__file__))
+
     while True:
         # message read from txt file to communicate with tracker
         communication_read = open(os.path.join(base_path, 'communication.txt'), 'r')

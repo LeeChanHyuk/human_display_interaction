@@ -4,7 +4,7 @@ import numpy as np
 from torch import normal
 
 def data_preprocessing(data: np.array, fps) -> np.array:
-    poses_from_one_video = data
+    poses_from_one_video = data.astype(np.float)
     center_eyes = poses_from_one_video[0, :, :3]
     center_mouths = poses_from_one_video[1, :, :3]
     left_shoulders = poses_from_one_video[2, :, :3]
@@ -19,11 +19,14 @@ def data_preprocessing(data: np.array, fps) -> np.array:
             div_num = 480
         else:
             div_num = 256
-        center_eyes[:,i] /= div_num
-        center_mouths[:,i] /= div_num
-        left_shoulders[:,i] /= div_num
-        right_shoulders[:,i] /= div_num
-        center_stomachs[:,i] /= div_num
+        try:
+            center_eyes[:,i] /= div_num
+            center_mouths[:,i] /= div_num
+            left_shoulders[:,i] /= div_num
+            right_shoulders[:,i] /= div_num
+            center_stomachs[:,i] /= div_num
+        except:
+            print(1)
         
     head_poses = poses_from_one_video[5, :, :3] / 90
     #body_poses = poses_from_one_video[6, :, :3] / 90

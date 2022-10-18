@@ -6,8 +6,6 @@ import numpy as np
 from pandas import pivot
 from torch import normal
 
-from visualization import visualization_tool
-
 landmark_names = [
     'nose',
     'left_eye_inner', 'left_eye', 'left_eye_outer',
@@ -199,7 +197,9 @@ def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height
     return left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye
 
 
-def body_pose_estimation(pose, frame, draw_frame, depth, human_info, flip_mode):
+def body_pose_estimation_func(pose, frame, depth):
+    body_poses = []
+    body_coordinates = []
     height, width = frame.shape[:2]
     results = pose.process(frame)
     if results.pose_landmarks:
@@ -208,15 +208,16 @@ def body_pose_estimation(pose, frame, draw_frame, depth, human_info, flip_mode):
             for lmk in body_landmarks.landmark], dtype=np.float32)
 
         left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye3 = body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height)
-        draw_frame = visualization_tool.draw_body_keypoints(draw_frame, [left_shoulder, right_shoulder, center_stomach, center_mouth, center_eye3], flip_mode)
+        #draw_frame = visualization_tool.draw_body_keypoints(draw_frame, [left_shoulder, right_shoulder, center_stomach, center_mouth, center_eye3], flip_mode)
         upper_body_yaw, upper_body_pitch, upper_body_roll = upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
         upper_body_yaw = upper_body_yaw * 180 / math.pi
         upper_body_pitch = upper_body_pitch * 180 / math.pi
         upper_body_roll = upper_body_roll * 180 / math.pi
+        body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
+        body_coordinates.append([center_eye3, center_mouth, left_shoulder, right_shoulder, center_stomach])
 
-        human_info._put_data(center_stomach, 'center_stomachs')
-        human_info._put_data(center_mouth, 'center_mouths')
-        human_info._put_data(left_shoulder, 'left_shoulders')
-        human_info._put_data(right_shoulder, 'right_shoulders')
-        human_info._put_data([upper_body_yaw, upper_body_pitch, upper_body_roll], 'body_poses')
-    return draw_frame
+    if len(body_poses) == 0:
+        body_poses = [0, 0, 0]
+    if len(body_coordinates) == 0:
+        body_coordinates = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    return np.array(body_poses), np.array(body_coordinates)

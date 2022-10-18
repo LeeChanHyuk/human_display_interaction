@@ -70,7 +70,6 @@ def inference(pose_sequence):
         action_vote[results[i]] += 1
     results[-1] = y_pred
     action_vote[results[-1]] += 1
-    print(action_vote)
     max_voted_action_val = np.max(action_vote)
     max_voted_action_class = np.argmax(action_vote)
     
@@ -88,27 +87,20 @@ def inference(pose_sequence):
     #print(action_vote)
     return state
 
-def action_recognition(frame, draw_frame, human_info, fps):
-    fps = int(fps)
-    if human_info.body_pose_estimation_flag and human_info.head_pose_estimation_flag and fps>0:
-        center_eyes = np.array(human_info.center_eyes[-2*fps:])
-        center_mouths = np.array(human_info.center_mouths[-2*fps:])
-        left_shoulders = np.array(human_info.left_shoulders[-2*fps:])
-        right_shoulders = np.array(human_info.right_shoulders[-2*fps:])
-        center_stomachs = np.array(human_info.center_stomachs[-2*fps:])
-        head_poses = np.array(human_info.head_poses[-2*fps:])
-        network_input = np.array([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses])
+def action_recognition_func(human_info, fps = 20):
+    center_eyes = np.array(human_info.center_eyes[-2*fps:])
+    center_mouths = np.array(human_info.center_mouths[-2*fps:])
+    left_shoulders = np.array(human_info.left_shoulders[-2*fps:])
+    right_shoulders = np.array(human_info.right_shoulders[-2*fps:])
+    center_stomachs = np.array(human_info.center_stomachs[-2*fps:])
+    head_poses = np.array(human_info.head_poses[-2*fps:])
+    network_input = np.array([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses])
 
-        # 총 25개의 features
-        network_input = preprocessing.data_preprocessing(network_input, fps)
-        network_input = np.expand_dims(np.array(network_input),axis=0)
-        human_state = inference(network_input)
-        human_info.human_state = human_state
-        cv2.putText(draw_frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
-        return draw_frame
-    else:
-        print("The body and head pose are not estimated normally. Please check the state of the human.")
-        return draw_frame
+    # 총 25개의 features
+    network_input = preprocessing.data_preprocessing(network_input, fps)
+    network_input = np.expand_dims(np.array(network_input),axis=0)
+    human_state = inference(network_input)
+    human_info.human_state = human_state
 
 results = np.zeros((20), dtype=np.uint8)
 model = load_model_for_inference(0)

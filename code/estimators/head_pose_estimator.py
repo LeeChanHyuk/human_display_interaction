@@ -36,13 +36,3 @@ def box_extraction(face_landmarks, width, height):
     left_eye_boxes.append([left_eye_inner_x1-eye_detection_margin, left_eye_inner_y1-eye_detection_margin, left_eye_inner_x2+eye_detection_margin, left_eye_inner_y2+eye_detection_margin])
     right_eye_boxes.append([right_eye_inner_x1-eye_detection_margin, right_eye_inner_y1-eye_detection_margin, right_eye_inner_x2+eye_detection_margin, right_eye_inner_y2+eye_detection_margin])
     return face_boxes, left_eye_boxes, right_eye_boxes
-
-def head_pose_estimation(frame, human_infos, fa, handler):
-    feed = frame.copy()
-    # Estimate head pose
-    for index, human_info in enumerate(human_infos):
-        face_box  = human_info.face_box
-        for results in fa.get_landmarks(feed, face_box):
-            pitch, yaw, roll = handler(frame, results, color=(125, 125, 125))
-            human_info._put_data([yaw, pitch, roll], 'head_poses')
-    return human_infos

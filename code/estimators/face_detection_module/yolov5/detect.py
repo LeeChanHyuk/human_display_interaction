@@ -198,7 +198,7 @@ def human_info_deep_copy(human_infos, human_info):
 	human_info.human_state = reference_human_info.human_state # Action recognition result
 	return human_info
 
-def yolo_initialization(frame_shape, weights, data, depth_face_tracker):
+def yolo_initialization(frame_shape, weights, data, depth_face_tracker = False):
     device = select_device('0')
     model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
     stride, names, pt = model.stride, model.names, model.pt
@@ -213,26 +213,15 @@ def yolo_initialization(frame_shape, weights, data, depth_face_tracker):
     return model, dt, device
 
 
-def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, frame_shape, human_infos = None, depth_face_tracker = False, model_dict = None, model_name = None):
-    if depth_face_tracker:
-        depth = cv2.inRange(depth, 300, 2000)
-        depth = cv2.normalize(depth, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-        #cv2.imshow('depth_image', depth)
-        #cv2.waitKey(1)
-        depth = np.expand_dims(depth, axis=2)
-        im = np.concatenate([im, depth], axis=2)
-    start_time = time.time()
-    im = cv2.resize(im, (640, 640))
-    depth = cv2.resize(depth, (640, 640))
+def yolo_face_detection(im, dt, device, model, frame_shape) -> np.array:
     height, width, channel = im.shape
+    if im.shape != frame_shape:
+        im = cv2.resize(im, frame_shape)
     gn = torch.tensor(im.shape)[[1, 0, 1, 0]]  # normalization gain whwh
     im = im[None, :]
     im = im[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW
     im = np.ascontiguousarray(im)  # contiguous
     # human_info objects
-    if not human_infos:
-        human_infos = []
-    avg_time = 0
     with dt[0]:
         im = torch.from_numpy(im).to(device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -247,10 +236,8 @@ def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, fram
     with dt[2]:
         pred = non_max_suppression(pred, 0.25, 0.45, None, False, 1000)
 
-    # Second-stage classifier (optional)
-    # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
     # Process predictions
-    det_result_num = 0
+    result = []
     for i, det in enumerate(pred):  # per image
         if len(det):
             # Rescale boxes from img_size to im0 size
@@ -260,47 +247,14 @@ def yolo_face_detection(im, depth, dt, device, model, draw_frame, view_img, fram
             for *xyxy, conf, cls in reversed(det):
                 if conf.item() < 0.5:
                     continue
-                if model_dict:
-                    model_dict[model_name] += 1
-                det_result_num += 1
-                # Check new user
-                if det_result_num > len(human_infos):
-                    human_info = HumanInfo()
-                    if len(human_infos)>0:
-                        human_info = human_info_deep_copy(human_infos, human_info)
-                else:
-                    human_info = human_infos[det_result_num-1]
+
                 # Convert the x, y, w, h from normalized coordinate 
                 xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                 x, y, w, h = xywh[0] * width, xywh[1] * height, xywh[2] * width, xywh[3] * height
                 x1, y1= int(x-(w/2)), int(y-(h/2))
                 x2, y2 = int(x1 + w -1), int(y1 + h - 1)
-
-				# Put the info into the human_info object
-                human_info.face_box = np.array([x1, y1, x2, y2]) # face box is not used for action recognition. Thus, face_box is not list.
-                human_info.face_box = np.expand_dims(human_info.face_box, axis=0)
-                human_info.face_detection_confidence = round(conf.item(), 3)
-
-                center_eyes_x = int((x1 + x2) / 2)
-                center_eyes_y = int((y1 + y2) / 2)
-                if depth_face_tracker:
-                    center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)][0]
-                else:
-                    center_eyes_z = depth[min(int(center_eyes_y), height-1), min(int(center_eyes_x), width-1)]
-                human_info._put_data([center_eyes_x, center_eyes_y, center_eyes_z], 'center_eyes')
-                if det_result_num >= len(human_infos):
-                    human_infos.append(human_info)
-        # Stream results
-    if False:
-        cv2.imshow("Detection result", draw_frame)
-        cv2.waitKey(1)  # 1 millisecond
-    #print(1/(time.time() - start_time))
-    #if time_point5 > 0:
-    #    print(1/time_point5)
-    if det_result_num > 0:
-        return human_infos, det_result_num
-    else:
-        return human_infos, 0
+                result.append([x1, y1, x2, y2])
+    return np.array(result)
 
 def parse_opt():
     parser = argparse.ArgumentParser()

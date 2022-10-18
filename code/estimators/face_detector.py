@@ -20,12 +20,13 @@ def calibration(human_info, real_sense_calibration = True):
     camera_vertical_angle = 58 # RGB = 42
 
     i_width = 640
-    i_height = 480
+    i_height = 640
     
     # before calibration
-    eye_x = center_eyes[0] - (i_width/2)
+    eye_x = (i_width - center_eyes[0]) - (i_width/2)
     eye_y = (i_height/2) - center_eyes[1]
     eye_z = center_eyes[2]
+    #print(eye_x, eye_y, eye_z)
 
     detected_x_angle = (camera_horizontal_angle / 2) * (eye_x / (i_width/2))
     detected_y_angle = (camera_vertical_angle / 2) * (eye_y / (i_height/2))
