@@ -94,4 +94,4 @@ def head_pose_estimation():
 			head_pose_sh_array[:] = np.array(head_poses[main_user_index])[:]
 			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_sh_array[main_user_index][:]
 			main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[main_user_index][:]
-			print('Head pose estimation fps is', str(1/(time.time() - start_time)))
+			#print('Head pose estimation fps is', str(1/(time.time() - start_time)))

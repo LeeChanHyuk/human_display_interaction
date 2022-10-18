@@ -51,5 +51,5 @@ def face_detection():
 			cv2.putText(draw_frame, "FPS:" + str(int(1/(time.time() - start_time))), (0, 100), cv2.FONT_HERSHEY_COMPLEX, 3, (0,0,255), 3)
 			cv2.rectangle(draw_frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 3)"""
 		#cv2.imshow("face detection", draw_frame)
-		print('Face detection fps is', str(1/(time.time() - start_time)))
 		#cv2.waitKey(1)
+		#print('Face detection fps is', str(1/(time.time() - start_time)))
