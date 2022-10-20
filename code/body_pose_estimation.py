@@ -41,7 +41,7 @@ def body_pose_estimation():
 		min_tracking_confidence=0.5,
 		model_complexity=1) as pose:
 		while 1:
-			if network_sh_array[:] < 2:
+			if network_sh_array[:] < 3:
 				continue
 			body_poses, body_coordinates = body_pose_estimation_func(pose, frame, depth)
 			body_pose_sh_array[:] = body_pose_size_array[:]

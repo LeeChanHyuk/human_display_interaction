@@ -60,6 +60,6 @@ def get_input_from_cam(video_folder_path = None):
 
 		frame[:,:,:] = temp_frame[:,:,:]
 		depth[:,:] = (temp_depth[:,:])
-		print('Input fps is', str(1/(time.time() - start_time)))
+		#print('Input fps is', str(1/(time.time() - start_time)))
 		#cv2.imshow('frame', frame)
 		#cv2.waitKey(1)

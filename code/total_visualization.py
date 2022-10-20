@@ -54,6 +54,7 @@ def visualization(draw_frame, human_info, mode, flip_mode):
 		#draw_frame = draw_axis(draw_frame, flip_val * human_info.body_poses[-1][1], human_info.body_poses[-1][0], flip_val * human_info.body_poses[-1][2], 
 		#					[int((human_info.left_shoulders[-1][0] + human_info.right_shoulders[-1][0])/2), int(human_info.left_shoulders[-1][1])], 
 		#					color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
+	if mode > 2:
 		draw_frame = draw_body_keypoints(draw_frame, 
 		[human_info.center_eyes[-1],
 		human_info.center_mouths[-1],
