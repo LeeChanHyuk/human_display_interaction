@@ -1,7 +1,7 @@
 import mediapipe as mp
 import numpy as np
 from multiprocessing import shared_memory
-from estimators.body_pose_estimator import body_pose_estimation_func, body_keypoint_extractor
+from estimators.body_pose_estimator import body_pose_estimation_func
 
 
 def body_pose_estimation():

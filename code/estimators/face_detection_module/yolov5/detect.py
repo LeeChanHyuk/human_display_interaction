@@ -26,16 +26,12 @@ Usage - formats:
 
 import argparse
 import os
-import platform
 import sys
 from pathlib import Path
-from traceback import FrameSummary
-from tracemalloc import start
 
 import torch
 import torch.backends.cudnn as cudnn
 import numpy as np
-import time
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -49,8 +45,6 @@ from estimators.face_detection_module.yolov5.utils.general import (LOGGER, Profi
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from estimators.face_detection_module.yolov5.utils.plots import Annotator, colors, save_one_box
 from estimators.face_detection_module.yolov5.utils.torch_utils import select_device, smart_inference_mode
-from user_information.human import HumanInfo
-from scipy.stats import mode
 
 
 @smart_inference_mode()

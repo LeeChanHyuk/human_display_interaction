@@ -1,7 +1,4 @@
-from cv2 import split
-from matplotlib.pyplot import axis
 import numpy as np
-from torch import normal
 
 def data_preprocessing(data: np.array, fps) -> np.array:
     poses_from_one_video = data.astype(np.float)

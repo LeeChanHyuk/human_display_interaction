@@ -4,7 +4,6 @@ import cv2
 import time
 
 from multiprocessing import shared_memory
-from copy import deepcopy
 
 from estimators.action_recognizer import action_recognition_func
 from user_information.human import HumanInfo
@@ -89,5 +88,5 @@ def action_recognition():
 		draw_frame = visualization(draw_frame, main_user_info, network_sh_array[:], False)
 		cv2.imshow('draw_frame', draw_frame)
 		cv2.waitKey(1)
-		#print('Action recognition estimation fps is', str(1/(time.time() - start_time)))
+		print('Action recognition estimation fps is', str(1/(time.time() - start_time)))
 		

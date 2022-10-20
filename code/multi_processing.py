@@ -6,7 +6,6 @@ from face_detection import face_detection
 from head_pose_estimation import head_pose_estimation
 from body_pose_estimation import body_pose_estimation
 from action_recognition import action_recognition
-from total_visualization import visualization
 from networking import router_function
 
 if __name__ == "__main__":

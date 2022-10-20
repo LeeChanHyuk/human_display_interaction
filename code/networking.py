@@ -9,8 +9,6 @@ def router_function():
     context2 = zmq.Context()
     to_renderer = context2.socket(zmq.REP)
     to_renderer.bind("tcp://*:5558")
-    line = ['0', '0 0 0', '0 0 0', 'standard'] # tracking_mode / eye_position / head_rotation / human action
-    base_path = os.path.dirname(os.path.abspath(__file__))
 
 	# face coordinate shared memory
     main_user_face_box_coordinate_shape = (1, 4) # for 20 peoples
@@ -46,13 +44,15 @@ def router_function():
     network_sh_array = np.ndarray(network_shape, dtype=np.uint8, buffer=network_shm.buf)
 
     while True:
+        start_time = time.time()
         message = to_renderer.recv()
+        #message = '3'
         network_sh_array[:] = int(message)
         message = str(message)[2]
         face_center_info = str(main_user_calib_face_center_coordinate_sh_array[0][0])+ ' ' + str(main_user_calib_face_center_coordinate_sh_array[0][1]) + ' ' + \
                 str(main_user_calib_face_center_coordinate_sh_array[0][2]) + ' ' + str(main_user_face_center_coordinate_sh_array[0][2])
         head_pose_info = str(head_pose_sh_array[0]) + ' ' +str(head_pose_sh_array[1]) + ' ' + str(head_pose_sh_array[2])
-        action_info = action_sh_array[0]
+        action_info = str(action_sh_array[0])
         if message == '0':
             send_message = 'N'
         elif message == '1':
@@ -62,6 +62,10 @@ def router_function():
         elif message == '3':
             send_message = 'A' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + action_info
         to_renderer.send_string(send_message)
+        """tmes = time.time() - start_time
+        if tmes == 0:
+            tmes = 1
+        print('networking fps is', str(1/tmes))"""
 
 
 def networking(human_info, mode, base_path):

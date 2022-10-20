@@ -1,11 +1,7 @@
-import os
 import math
-from pathlib import WindowsPath
 import cv2
 import numpy as np
-
 from user_information.human import HumanInfo
-from estimators.face_detection_module.yolov5.detect import yolo_initialization, yolo_face_detection
 
 def box_extraction(face_landmarks, width, height):
     """Params

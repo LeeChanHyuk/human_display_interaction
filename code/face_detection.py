@@ -1,8 +1,5 @@
 import os
-from cv2 import drawFrameAxes
-from matplotlib.pyplot import draw
 import numpy as np
-import cv2
 from multiprocessing import shared_memory
 import time
 
@@ -52,4 +49,4 @@ def face_detection():
 			cv2.rectangle(draw_frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 3)"""
 		#cv2.imshow("face detection", draw_frame)
 		#cv2.waitKey(1)
-		#print('Face detection fps is', str(1/(time.time() - start_time)))
+		print('Face detection fps is', str(1/(time.time() - start_time)))

@@ -1,10 +1,5 @@
-from turtle import left
-import cv2
-import mediapipe as mp
 import math
 import numpy as np
-from pandas import pivot
-from torch import normal
 
 landmark_names = [
     'nose',
