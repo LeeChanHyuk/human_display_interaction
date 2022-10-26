@@ -23,7 +23,7 @@ def face_detection():
 
 	model, dt, device = yolo_initialization(
 		frame_shape = (640, 640, 3),
-		weights= os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'hue_rgb_strong_best.torchscript'),
+		weights= os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'rgb_hue_strong.torchscript'),
 		data = os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'data', 'coco128.yaml'),
 	)
 
