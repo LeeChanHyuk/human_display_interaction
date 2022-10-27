@@ -6,6 +6,7 @@ Website: https://www.computervision.zone
 """
  
 import cv2
+from matplotlib.axis import YAxis
 import mediapipe as mp
 import time
 import math
@@ -112,11 +113,11 @@ class handDetector():
         if self.results.multi_hand_landmarks:
             for i in range(len(self.results.multi_hand_landmarks)):
                 fingerPositionList = self.findPosition(img, i, draw = False)
-                main_user_finger_list.append(fingerPositionList)
-                finger_distance.append(self.get_3d_distance(
-                    [fingerPositionList[9][1], fingerPositionList[9][2], depth[fingerPositionList[9][2], fingerPositionList[9][1]]],
-                    face_center
-                ))
+                finger_center_position = [min(639,fingerPositionList[9][1]), min(639,fingerPositionList[9][2]), depth[min(639,fingerPositionList[9][2]), min(639,fingerPositionList[9][1])]]
+                distance = self.get_3d_distance(finger_center_position, face_center)
+                if distance > 50:
+                    main_user_finger_list.append(fingerPositionList)
+                    finger_distance.append(distance)
             max_distance = 100000
             max_index = 0
 
@@ -128,7 +129,10 @@ class handDetector():
                     max_index = i
 
             # return main user left, right hands positions
-            return main_user_finger_list[max_index]
+            if len(main_user_finger_list) > 0:
+                return main_user_finger_list[max_index]
+            else:
+                return None
 
     ############################################### hand state analysis functions ###############################################
 
@@ -173,21 +177,50 @@ class handDetector():
         return spread_hands_bool
 
     def handGrab(self, finger_lists):
-        distance_1 = self.get_distance(finger_lists[9], finger_lists[10])
-        distance_2 = self.get_distance(finger_lists[9], finger_lists[11])
-        distance_3 = self.get_distance(finger_lists[9], finger_lists[12])
-        distance_4 = self.get_distance(finger_lists[10], finger_lists[11])
-        distance_5 = self.get_distance(finger_lists[10], finger_lists[12])
-        distance_6 = self.get_distance(finger_lists[11], finger_lists[12])
-        max_distance = max(distance_1, distance_2, distance_3, distance_4, distance_5, distance_6)
-        min_distance = min(distance_1, distance_2, distance_3, distance_4, distance_5, distance_6)
-        ratio = min_distance / max_distance
-        if ratio < 0.2 or finger_lists[12][2] > finger_lists[11][2] or finger_lists[11][2] > finger_lists[10][2] or finger_lists[10][2] > finger_lists[9][2]:
+        # middle
+        middle_distance_1 = self.get_distance(finger_lists[9], finger_lists[10])
+        middle_distance_2 = self.get_distance(finger_lists[9], finger_lists[11])
+        middle_distance_3 = self.get_distance(finger_lists[9], finger_lists[12])
+        middle_distance_4 = self.get_distance(finger_lists[10], finger_lists[11])
+        middle_distance_5 = self.get_distance(finger_lists[10], finger_lists[12])
+        middle_distance_6 = self.get_distance(finger_lists[11], finger_lists[12])
+        middle_max_distance = max(middle_distance_1, middle_distance_2, middle_distance_3, middle_distance_4, middle_distance_5, middle_distance_6)
+        middle_min_distance = min(middle_distance_1, middle_distance_2, middle_distance_3, middle_distance_4, middle_distance_5, middle_distance_6)
+        middle_ratio = middle_min_distance / middle_max_distance
+        middle_grab = finger_lists[12][2] > finger_lists[11][2] or finger_lists[11][2] > finger_lists[10][2] or finger_lists[10][2] > finger_lists[9][2]
+
+        # middle
+        index_distance_1 = self.get_distance(finger_lists[5], finger_lists[6])
+        index_distance_2 = self.get_distance(finger_lists[5], finger_lists[7])
+        index_distance_3 = self.get_distance(finger_lists[5], finger_lists[8])
+        index_distance_4 = self.get_distance(finger_lists[6], finger_lists[7])
+        index_distance_5 = self.get_distance(finger_lists[6], finger_lists[8])
+        index_distance_6 = self.get_distance(finger_lists[7], finger_lists[8])
+        index_max_distance = max(index_distance_1, index_distance_2, index_distance_3, index_distance_4, index_distance_5, index_distance_6)
+        index_min_distance = min(index_distance_1, index_distance_2, index_distance_3, index_distance_4, index_distance_5, index_distance_6)
+        index_ratio = index_min_distance / index_max_distance
+        index_grab = finger_lists[8][2] > finger_lists[7][2] or finger_lists[7][2] > finger_lists[6][2] or finger_lists[6][2] > finger_lists[5][2]
+
+        # pinky
+        pinky_distance_1 = self.get_distance(finger_lists[17], finger_lists[18])
+        pinky_distance_2 = self.get_distance(finger_lists[17], finger_lists[19])
+        pinky_distance_3 = self.get_distance(finger_lists[17], finger_lists[20])
+        pinky_distance_4 = self.get_distance(finger_lists[18], finger_lists[19])
+        pinky_distance_5 = self.get_distance(finger_lists[18], finger_lists[20])
+        pinky_distance_6 = self.get_distance(finger_lists[19], finger_lists[20])
+        pinky_max_distance = max(pinky_distance_1, pinky_distance_2, pinky_distance_3, pinky_distance_4, pinky_distance_5, pinky_distance_6)
+        pinky_min_distance = min(pinky_distance_1, pinky_distance_2, pinky_distance_3, pinky_distance_4, pinky_distance_5, pinky_distance_6)
+        pinky_ratio = pinky_min_distance / pinky_max_distance
+        pinky_grab = finger_lists[20][2] > finger_lists[19][2] or finger_lists[19][2] > finger_lists[18][2] or finger_lists[18][2] > finger_lists[17][2]
+
+        ratio = min(middle_ratio, index_ratio, middle_ratio)
+
+        if ratio < 0.2 or middle_grab or index_grab or pinky_grab:
             return True
         else:
             return False
 
-    def hand_fist(self, finger_position_list):
+    def hand_fist(self, finger_position_list, hand_center_position):
         finger_x_list = [finger_position_list[2][1], finger_position_list[3][1], finger_position_list[4][1], \
             finger_position_list[6][1], finger_position_list[7][1], finger_position_list[8][1], \
             finger_position_list[10][1], finger_position_list[11][1], finger_position_list[12][1], \
@@ -201,10 +234,37 @@ class handDetector():
         x_var = np.var(finger_x_list)
         y_var = np.var(finger_y_list)
         var_mean = (x_var + y_var) / 2
+        var_mean /= hand_center_position[2]
         if var_mean < 300:
-            return True
+            return True, var_mean
         else:
-            return False
+            return False, var_mean
+    
+    def new_hand_fist(self, finger_position_list, hand_center_position):
+        x_min, y_min, x_max, y_max = 999, 999, -1, -1
+        for i in range(21):
+            if finger_position_list[i][1] < x_min:
+                x_min = finger_position_list[i][1]
+            if finger_position_list[i][1] > x_max:
+                x_max = finger_position_list[i][1]
+            if finger_position_list[i][2] < y_min:
+                y_min = finger_position_list[i][2]
+            if finger_position_list[i][2] > y_max:
+                y_max = finger_position_list[i][2]
+        
+        start_x_angle = self.get_3d_x_angle(x_min, 640, 69)
+        end_x_angle = self.get_3d_x_angle(x_max, 640, 69)
+        position_x_diff = self.get_3d_x_diff(start_x_angle, end_x_angle, hand_center_position[2], hand_center_position[2])
+
+        start_y_angle = self.get_3d_y_angle(y_min, 640, 69)
+        end_y_angle = self.get_3d_y_angle(y_max, 640, 69)
+        position_y_diff = self.get_3d_x_diff(start_y_angle, end_y_angle, hand_center_position[2], hand_center_position[2])
+
+        area = position_x_diff * position_y_diff
+        if area <= 45000:
+            return True, area
+        else:
+            return False, area
 
     def hand_up(self, finger_position_list):
         up = True
@@ -273,8 +333,8 @@ class handDetector():
                 self.grab_start_value = hand_center_position
                 self.last_state_changed_time = float(time.time())
         elif self.state == 'translating':
-            start_angle = self.get_3d_angle(self.grab_start_value, 640, 69)
-            end_angle = self.get_3d_angle(hand_center_position, 640, 69)
+            start_angle = self.get_3d_x_angle(self.grab_start_value[0], 640, 69)
+            end_angle = self.get_3d_x_angle(hand_center_position[0], 640, 69)
             grab_diff = self.get_3d_x_diff(start_angle, end_angle, self.grab_start_value[2], hand_center_position[2])
             self.put_info(grab_diff, 'translating_factor')
             if self.hand_grab_bool[-1] == False or self.hand_up_state == False:
@@ -285,9 +345,9 @@ class handDetector():
                 self.state = 'standard'
                 self.translating_tolerance = int(fps // 2)
     
-    def get_3d_angle(self, position, img_w, camera_angle):
+    def get_3d_x_angle(self, position, img_w, camera_angle):
         center_w = int(img_w // 2)
-        diff_x = position[0] - center_w
+        diff_x = position - center_w
         angle = camera_angle * (diff_x / center_w)
         return angle
     
@@ -295,6 +355,17 @@ class handDetector():
         x_1 = math.sin(math.radians(angle_1)) * depth_1
         x_2 = math.sin(math.radians(angle_2)) * depth_2
         return x_2 - x_1
+
+    def get_3d_y_angle(self, position, img_h, camera_angle):
+        center_h = int(img_h // 2)
+        diff_h = position - center_h
+        angle = camera_angle * (diff_h / center_h)
+        return angle
+    
+    def get_3d_y_diff(self, angle_1, angle_2, depth_1, depth_2):
+        y_1 = math.sin(math.radians(angle_1)) * depth_1
+        y_2 = math.sin(math.radians(angle_2)) * depth_2
+        return y_2 - y_1
 
     def rotation_manipulation(self, hand_center_position, fps):
         half_fps = int(fps // 2)
@@ -310,9 +381,9 @@ class handDetector():
                 self.last_state_changed_time = float(time.time())
         elif self.state == 'rotating':
             self.tolerance = half_fps
-            start_angle = self.get_3d_angle(self.spread_start_value, 640, 69)
-            end_angle = self.get_3d_angle(hand_center_position, 640, 69)
-            position_diff = self.get_3d_x_diff(start_angle, end_angle, self.grab_start_value[2], hand_center_position[2])
+            start_angle = self.get_3d_x_angle(self.spread_start_value[0], 640, 69)
+            end_angle = self.get_3d_x_angle(hand_center_position[0], 640, 69)
+            position_diff = self.get_3d_x_diff(start_angle, end_angle, self.spread_start_value[2], hand_center_position[2])
             self.put_info(position_diff, 'rotating_factor')
             if self.hand_spread_bool[-1] == False or self.hand_grab_bool[-1] is True or self.hand_up_state is False:
                 self.rotating_tolerance -= 1
