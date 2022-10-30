@@ -1,11 +1,13 @@
 import cv2
 import time
 import numpy as np
-import estimators.hand_gesture_recognizer as htm
-from collections import deque
+import hand_gesture_recognizer as htm
 from multiprocessing import shared_memory
+from collections import deque
  
 ################################
+cap = cv2.VideoCapture(0)
+
 wCam, hCam = 640, 640
 ################################
 
@@ -28,31 +30,37 @@ def show_image(img, pTime):
  
     cv2.imshow("Img", img)
     cv2.waitKey(1)
-    return fps
+    return int(fps)
 
 def user_hand_state_initialization(user_hand_state):
     for i in range(200):
         user_hand_state.append('standard')
     return user_hand_state
 
-def user_state_analysis(detector, user_hand_state, half_fps):
-    user_state = detector.state
+def user_state_analysis(detector, user_hand_state, fps, current_state):
+    fps = int(fps)
     user_hand_state.popleft()
-    user_hand_state.append(user_state)
+    user_hand_state.append(current_state)
     same_with_user_state = True
     val = None
-    for i in range(half_fps):
-        if user_hand_state[-1-i] != user_state:
+    state = None
+    for i in range(fps):
+        if user_hand_state[-1-i] != current_state:
             same_with_user_state = False
             break
     if same_with_user_state:
-        if user_state == 'scaling':
-            val = detector.scaling_factor[-1-half_fps]
-        elif user_state == 'translating':
-            val = detector.translating_factor[-1-half_fps]
-        elif user_state == 'rotating':
-            val = detector.rotating_factor[-1-half_fps]
-    return val, user_hand_state
+        if current_state == 'scaling':
+            val = detector.scaling_factor[-1-fps]
+            state = 'scaling'
+        elif current_state == 'translating':
+            val = detector.translating_factor[-1-fps]
+            state = 'translating'
+        elif current_state == 'rotating':
+            val = detector.rotating_factor[-1-fps]
+            state = 'rotating'
+    if state is None:
+        state = current_state
+    return val, user_hand_state, state
 
 def draw_hand(img, finger_list):
     for i in range(21):
@@ -95,9 +103,9 @@ def hand_gesture_recognition():
     user_hand_state = user_hand_state_initialization(user_hand_state)
     while True:
         pTime = time.time()
-        img[:] = frame[:]
-        if main_user_face_center_coordinate_sh_array[0][0] == 0:
-            continue
+        ret, img = cap.read()
+        if main_user_face_center_coordinate_sh_array[0][2] == 0:
+            main_user_face_center_coordinate_sh_array[0][2] = 650
     
         # Find Hand
         img = detector.findHands(img, draw=False)
@@ -106,46 +114,64 @@ def hand_gesture_recognition():
         if finger_position_list is not None:
             hand_center_position = [min(639,finger_position_list[9][1]), min(639,finger_position_list[9][2]), depth[min(639,finger_position_list[9][2]), min(639,finger_position_list[9][1])]]
             img = draw_hand(img, finger_position_list)
-            fps = 20
-            half_fps = int(fps // 3)
-            #hand_fist_bool = detector.hand_fist(finger_position_list, main_user_face_center_coordinate_sh_array[0])
             hand_fist_bool, var_mean = detector.new_hand_fist(finger_position_list, hand_center_position)
-            #print('grabbing', str(var_mean))
             if hand_fist_bool:
-                if detector.state != 'standard':
-                    if fist_count < 3:
-                        fist_count += 1
-                    else:
-                        detector.state = 'standard'
-                        fist_count = 0
+                val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, 'standard')
+                detector.state = state
             else:
+                horizontal_hand_flip = detector.horizontal_hand_flip_manipulation(fps, finger_position_list)
+                vertical_hand_flip = detector.vertical_hand_flip_manipulation(fps, finger_position_list)
+                if detector.state == 'horizontal_flip_standby' or detector.state == 'vertical_flip_standby':
+                    fps = show_image(img, pTime)
+                    val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state)
+                    continue
+                if horizontal_hand_flip:
+                    print('vertical_flip is successed')
+                if vertical_hand_flip:
+                    print('vertical_flip is successed')
+                val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state)
+
                 spread_hand_bool, index_finger_grab = detector.scale_manipulation(fps, finger_position_list)
                 if detector.state == 'scaling':
-                    scaling_factor = detector.scaling_factor[-half_fps-1]
-                    #print(detector.state, str(scaling_factor))
+                    scaling_factor = detector.scaling_factor[-fps-1]
                     fps = show_image(img, pTime)
-                    val, user_hand_state = user_state_analysis(detector, user_hand_state, half_fps)
+                    val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state)
+                    """if state == 'scaling':
+                        print(state, detector.scale_start_value)
+                    else:
+                        print(state)"""
                     continue
                 
                 detector.translation_manipulation(hand_center_position, finger_position_list, fps)
                 if detector.state == 'translating':
-                    translating_factor = detector.translating_factor[-half_fps-1]
-                    #print(detector.state, str(translating_factor))
+                    translating_factor = detector.translating_factor[-fps-1]
                     fps = show_image(img, pTime)
-                    val, user_hand_state = user_state_analysis(detector, user_hand_state, half_fps)
+                    val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state)
+                    """if state == 'translating':
+                        print(state, detector.grab_start_value)
+                    else:
+                        print(state)"""
                     continue
                 
                 detector.rotation_manipulation(hand_center_position, fps)
                 if detector.state == 'rotating':
-                    rotating_factor = detector.rotating_factor[-half_fps-1]
-                    #print(detector.state, str(rotating_factor))
+                    rotating_factor = detector.rotating_factor[-fps-1]
                     fps = show_image(img, pTime)
-                    val, user_hand_state = user_state_analysis(detector, user_hand_state, half_fps)
+                    val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state)
+                    """if state == 'rotating':
+                        print(state, detector.spread_start_value)
+                    else:
+                        print(state)"""
                     continue
+                val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, 'standard')
+                detector.state = state # because the detector cannot update the state in unfinding situation.
         else:
-            detector.state = 'standard'
-            print('no hand is detected')
-        
+            #print('no hand is detected')
+            if float(time.time()) - detector.last_state_changed_time > 2:
+                val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, 'standard')
+                detector.state = state # because the detector cannot update the state in unfinding situation.
+
+        #print(state)
         hand_gesture_sh_array[:] = detector.state
         show_image(img, pTime)
         #print(spread_hand_bools)
