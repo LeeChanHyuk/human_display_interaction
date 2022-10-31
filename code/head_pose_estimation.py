@@ -5,7 +5,7 @@ import time
 from multiprocessing import shared_memory
 
 import estimators.head_pose_estimation_module.service as service
-from estimators.main_user_classifier import main_user_classification
+from estimators.main_user_classifier import main_user_classification, main_user_classification_filter
 
 def head_pose_estimation_func(frame, face_boxes, fa, handler):
 	feed = frame.copy()
@@ -40,6 +40,7 @@ def head_pose_estimation():
 	box_size_array = np.zeros(face_coordinate_shape, dtype=np.int64)
 	face_coordinate_shm = shared_memory.SharedMemory(name = 'face_box_coordinate')
 	face_coordinate_sh_array = np.ndarray(face_coordinate_shape, dtype=np.int64, buffer=face_coordinate_shm.buf)
+	face_coordinate_array = np.ndarray(face_coordinate_shape, dtype=np.int64)
 
 	# face box coordinate shared memory
 	main_user_face_box_coordinate_shape = (1, 4) # for 20 peoples
@@ -68,10 +69,14 @@ def head_pose_estimation():
 	# Initialize face detection module
 	fa = service.DepthFacialLandmarks(os.path.join(ROOT, "estimators/head_pose_estimation_module/weights/sparse_face.tflite"))
 	handler = getattr(service, 'pose')
+	previous_length = 0
+	previous_main_user_position = [0, 0, 0]
+	tolerance = 10
 
 	while 1:
 		start_time = time.time()
 		face_center_coordinates = []
+		face_coordinate_array[:] = face_coordinate_sh_array[:]
 		for i in range(10):
 			x1, y1, x2, y2 = face_coordinate_sh_array[i][:]
 			if int(x1) == 0 and int(x2) == 0:
@@ -88,10 +93,14 @@ def head_pose_estimation():
 			continue
 		head_poses = head_pose_estimation_func(frame, face_coordinate_sh_array, fa, handler)
 		if len(head_poses) > 0 and len(head_poses) == len(face_center_coordinates):
+			fps = int(1 / (time.time() - start_time))
 			main_user_index = main_user_classification(face_center_coordinates, head_poses)
+			main_user_index, tolerance = main_user_classification_filter(tolerance, previous_main_user_position, face_center_coordinates[main_user_index], main_user_index, face_center_coordinates, fps)
+			previous_main_user_position = face_center_coordinates[main_user_index]
 
 			# only store main user information
 			head_pose_sh_array[:] = np.array(head_poses[main_user_index])[:]
-			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_sh_array[main_user_index][:]
+			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_array[main_user_index][:]
+			#print(face_coordinate_sh_array[main_user_index][:], face_center_coordinates[main_user_index])
 			main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[main_user_index][:]
 			#print('Head pose estimation fps is', str(1/(time.time() - start_time)))

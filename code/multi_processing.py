@@ -7,7 +7,7 @@ from head_pose_estimation import head_pose_estimation
 from body_pose_estimation import body_pose_estimation
 from action_recognition import action_recognition
 from networking import router_function
-from hand_gesture_recognition import hand_gesture_recognition
+#from hand_gesture_recognition import hand_gesture_recognition
 
 if __name__ == "__main__":
 	##################### shared memory initialization ########################
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	action_shape = (1)
 	size_array = np.chararray(action_shape, itemsize=10)
 	action_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'action')
-	action_sh_array = np.chararray(action_shape, itemsize=1, buffer=action_shm.buf)
+	action_sh_array = np.chararray(action_shape, itemsize=10, buffer=action_shm.buf)
 
     # network shm
 	network_shape = (1)
@@ -74,9 +74,17 @@ if __name__ == "__main__":
 
     # hand_gesture shm
 	hand_gesture_shape = (1)
-	size_array = np.chararray(hand_gesture_shape, itemsize=10)
+	size_array = np.chararray(hand_gesture_shape, itemsize=30)
 	hand_gesture_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'hand_gesture')
-	hand_gesture_sh_array = np.chararray(hand_gesture_shape, itemsize=1, buffer=hand_gesture_shm.buf)
+	hand_gesture_sh_array = np.chararray(hand_gesture_shape, itemsize=30, buffer=hand_gesture_shm.buf)
+	hand_gesture_sh_array[:] = 'standard'
+
+    # hand_gesture 
+	hand_val_shape = (3)
+	size_array = np.zeros(hand_val_shape, dtype=np.int64)
+	hand_val_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'hand_val')
+	hand_val_sh_array = np.ndarray(hand_val_shape, dtype=np.int64, buffer=hand_val_shm.buf)
+	hand_val_sh_array[:] = [0, 0, 0]
 
 	#################### Multi processing #########################
 
@@ -86,7 +94,7 @@ if __name__ == "__main__":
 	p4 = Process(target=body_pose_estimation)
 	p5 = Process(target=action_recognition)
 	p6 = Process(target=router_function)
-	p7 = Process(target=hand_gesture_recognition)
+	#p7 = Process(target=hand_gesture_recognition)
 	p1.start()
 	print('p1 start')
 	p2.start()
@@ -99,8 +107,8 @@ if __name__ == "__main__":
 	print('p5 start')
 	p6.start()
 	print('p6 start')
-	p7.start()
-	print('p7 start')
+	#p7.start()
+	#print('p7 start')
 
 	p1.join()
 	print('p1 join')
@@ -114,5 +122,5 @@ if __name__ == "__main__":
 	print('p5 join')
 	p6.join()
 	print('p6 join')
-	p7.join()
-	print('p7 join')
+	#p7.join()
+	#print('p7 join')

@@ -37,6 +37,18 @@ def router_function():
     action_shm = shared_memory.SharedMemory(name = 'action')
     action_sh_array = np.ndarray(action_shape, dtype=np.string_, buffer=action_shm.buf)
 
+    # hand_gesture shm
+    hand_gesture_shape = (1)
+    size_array = np.chararray(hand_gesture_shape, itemsize=30)
+    hand_gesture_shm = shared_memory.SharedMemory(name = 'hand_gesture')
+    hand_gesture_sh_array = np.chararray(hand_gesture_shape, itemsize=30, buffer=hand_gesture_shm.buf)
+
+    # hand_gesture 
+    hand_val_shape = (3)
+    size_array = np.zeros(hand_val_shape, dtype=np.int64)
+    hand_val_shm = shared_memory.SharedMemory(name = 'hand_val')
+    hand_val_sh_array = np.ndarray(hand_val_shape, dtype=np.int64, buffer=hand_val_shm.buf)
+
     # network shm
     network_shape = (1)
     size_array = np.zeros(network_shape, dtype=np.uint8)
@@ -53,6 +65,9 @@ def router_function():
                 str(main_user_calib_face_center_coordinate_sh_array[0][2]) + ' ' + str(main_user_face_center_coordinate_sh_array[0][2])
         head_pose_info = str(head_pose_sh_array[0]) + ' ' +str(head_pose_sh_array[1]) + ' ' + str(head_pose_sh_array[2])
         action_info = str(action_sh_array[0])
+        hand_info = str(hand_gesture_sh_array[0])
+        hand_info = hand_info[2:len(hand_info)-1]
+        hand_val = str(hand_val_sh_array[0]) + ' ' + str(hand_val_sh_array[1]) + ' ' + str(hand_val_sh_array[2])
         if message == '0':
             send_message = 'N'
         elif message == '1':
@@ -61,6 +76,8 @@ def router_function():
             send_message = 'E' + ' ' + face_center_info + ' ' + head_pose_info
         elif message == '3':
             send_message = 'A' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + action_info
+        elif message == '4':
+            send_message = 'H' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + hand_info + ' ' + hand_val
         to_renderer.send_string(send_message)
         """tmes = time.time() - start_time
         if tmes == 0:
