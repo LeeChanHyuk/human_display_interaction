@@ -3,9 +3,12 @@ import numpy as np
 import cv2
 import time
 from multiprocessing import shared_memory
+from estimators.face_detection_module.yolov5.detect import main
 
 import estimators.head_pose_estimation_module.service as service
 from estimators.main_user_classifier import main_user_classification, main_user_classification_filter
+from user_information.human import HumanInfo
+from estimators.calibrator import calibration
 
 def head_pose_estimation_func(frame, face_boxes, fa, handler):
 	feed = frame.copy()
@@ -29,6 +32,7 @@ def head_pose_estimation():
 	frame_shape = (640, 640, 3)
 	frame_shm = shared_memory.SharedMemory(name='frame')
 	frame = np.ndarray(frame_shape, dtype=np.uint8, buffer=frame_shm.buf)
+	draw_frame = np.ndarray(frame_shape, dtype=np.uint8)
 
 	# depth shared memory
 	depth_shape = (640, 640)
@@ -52,6 +56,12 @@ def head_pose_estimation():
 	main_user_face_center_coordinate_shm = shared_memory.SharedMemory(name = 'main_user_face_center_coordinate')
 	main_user_face_center_coordinate_sh_array = np.ndarray(main_user_face_center_coordinate_shape, dtype=np.int64, buffer=main_user_face_center_coordinate_shm.buf)
 
+	# main user face center coordinate shared memory
+	main_user_calib_face_center_coordinate_shape = (1, 3) # for 20 peoples
+	size_array = np.zeros(main_user_calib_face_center_coordinate_shape, dtype=np.int64)
+	main_user_calib_face_center_coordinate_shm = shared_memory.SharedMemory(name = 'main_user_calib_face_center_coordinate')
+	main_user_calib_face_center_coordinate_sh_array = np.ndarray(main_user_face_center_coordinate_shape, dtype=np.int64, buffer=main_user_calib_face_center_coordinate_shm.buf)
+
 	# network shm
 	network_shape = (1)
 	size_array = np.zeros(network_shape, dtype=np.uint8)
@@ -72,6 +82,7 @@ def head_pose_estimation():
 	previous_length = 0
 	previous_main_user_position = [0, 0, 0]
 	tolerance = 10
+	main_user_info = HumanInfo()
 
 	while 1:
 		start_time = time.time()
@@ -91,6 +102,7 @@ def head_pose_estimation():
 			if len(face_center_coordinates) > 0:
 				main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[0][:]
 			continue
+		draw_frame[:] = frame[:]
 		head_poses = head_pose_estimation_func(frame, face_coordinate_sh_array, fa, handler)
 		if len(head_poses) > 0 and len(head_poses) == len(face_center_coordinates):
 			fps = int(1 / (time.time() - start_time))
@@ -101,6 +113,15 @@ def head_pose_estimation():
 			# only store main user information
 			head_pose_sh_array[:] = np.array(head_poses[main_user_index])[:]
 			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_array[main_user_index][:]
+			cv2.rectangle(draw_frame, (face_coordinate_array[main_user_index][0], face_coordinate_array[main_user_index][1]),
+			(face_coordinate_array[main_user_index][2], face_coordinate_array[main_user_index][3]), (255, 0, 0), 3)
 			#print(face_coordinate_sh_array[main_user_index][:], face_center_coordinates[main_user_index])
 			main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[main_user_index][:]
 			#print('Head pose estimation fps is', str(1/(time.time() - start_time)))
+		if network_sh_array < 3:
+			main_user_info.face_box[:] = main_user_face_box_coordinate_sh_array[0][:]
+			main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
+			calibration(main_user_info, True)
+			main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
+			cv2.imshow('draw_frame', draw_frame)
+			cv2.waitKey(1)

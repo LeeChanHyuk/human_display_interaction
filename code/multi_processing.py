@@ -4,8 +4,8 @@ from multiprocessing import Process, shared_memory
 from get_input_from_cam import get_input_from_cam
 from face_detection import face_detection
 from head_pose_estimation import head_pose_estimation
-from body_pose_estimation import body_pose_estimation
-from action_recognition import action_recognition
+#from body_pose_estimation import body_pose_estimation
+#from action_recognition import action_recognition
 from networking import router_function
 #from hand_gesture_recognition import hand_gesture_recognition
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 	size_array = np.zeros(network_shape, dtype=np.int64)
 	network_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'networking')
 	network_sh_array = np.ndarray(network_shape, dtype=np.int64, buffer=network_shm.buf)
-	network_sh_array[:] = 3
+	network_sh_array[:] = 2
 
     # hand_gesture shm
 	hand_gesture_shape = (1)
@@ -91,8 +91,8 @@ if __name__ == "__main__":
 	p1 = Process(target=get_input_from_cam)
 	p2 = Process(target=face_detection)
 	p3 = Process(target=head_pose_estimation)
-	p4 = Process(target=body_pose_estimation)
-	p5 = Process(target=action_recognition)
+	#p4 = Process(target=body_pose_estimation)
+	#p5 = Process(target=action_recognition)
 	p6 = Process(target=router_function)
 	#p7 = Process(target=hand_gesture_recognition)
 	p1.start()
@@ -101,10 +101,10 @@ if __name__ == "__main__":
 	print('p2 start')
 	p3.start()
 	print('p3 start')
-	p4.start()
-	print('p4 start')
-	p5.start()
-	print('p5 start')
+	#p4.start()
+	#print('p4 start')
+	#p5.start()
+	#print('p5 start')
 	p6.start()
 	print('p6 start')
 	#p7.start()
@@ -116,10 +116,10 @@ if __name__ == "__main__":
 	print('p2 join')
 	p3.join()
 	print('p3 join')
-	p4.join()
-	print('p4 join')
-	p5.join()
-	print('p5 join')
+	#p4.join()
+	#print('p4 join')
+	#p5.join()
+	#print('p5 join')
 	p6.join()
 	print('p6 join')
 	#p7.join()

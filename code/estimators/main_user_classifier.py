@@ -40,7 +40,6 @@ def get_3d_distance(p1, p2):
 def main_user_classification_filter(tolerance, previous_main_user_position, current_main_user_position, main_user_index, face_center_coordinates, fps):
     distance_threshold = 50
     distance = get_3d_distance(previous_main_user_position, current_main_user_position)
-    print(distance)
     if distance > distance_threshold and tolerance < 0:
         tolerance = int(fps/2)
     elif distance > distance_threshold:
