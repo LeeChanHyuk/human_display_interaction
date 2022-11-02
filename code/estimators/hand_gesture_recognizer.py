@@ -16,7 +16,7 @@ import itertools
 from collections import deque
  
 class handDetector():
-    def __init__(self, mode=False, maxHands=10, detectionCon=0.5, trackCon=0.5):
+    def __init__(self, mode=False, maxHands=10, detectionCon=0.5, trackCon=0.3):
         # Default
         self.mode = mode
         self.maxHands = maxHands
@@ -49,15 +49,14 @@ class handDetector():
         self.spread_start_value = 0
         self.last_hand_position = [0, 0, 0]
         self.hand_up_state = False
-        self.scaling_tolerance = 20
-        self.translating_tolerance = 20
-        self.rotating_tolerance = 20
+        self.stopping_tolerance = 20
         self.horizontal_flip_standby_tolerance = 20
         self.vertical_flip_standby_tolerance = 20
 
         self.last_state_changed_time = float(time.time())
         self.vertical_flip_time = float(time.time())
         self.horizontal_flip_time = float(time.time())
+        self.stopping_time = float(time.time())
         self.find_hand = False
     
     ###################################### hand data manipulation #########################################
@@ -353,11 +352,12 @@ class handDetector():
 
         start_y_angle = self.get_3d_y_angle(self.grab_start_value[1], 640, 69)
         end_y_angle = self.get_3d_y_angle(hand_center_position[1], 640, 69)
-        position_y_diff = self.get_3d_x_diff(start_y_angle, end_y_angle, hand_center_position[2], hand_center_position[2])
+        position_y_diff = self.get_3d_y_diff(start_y_angle, end_y_angle, hand_center_position[2], hand_center_position[2])
 
         position_z_diff = hand_center_position[2] - self.grab_start_value[2]
 
-        diff = [position_x_diff * scale_ratio, position_y_diff * scale_ratio, position_z_diff * scale_ratio]
+        #diff = [position_x_diff * scale_ratio, position_y_diff * scale_ratio, position_z_diff * scale_ratio]
+        diff = [position_x_diff * scale_ratio, position_y_diff * scale_ratio, 0 * scale_ratio]
         return diff
 
     def rotation_factor_calculation(self, hand_center_position, scale_ratio = 0.15):
@@ -399,26 +399,34 @@ class handDetector():
             self.tolerance = fps
             # distance between index and thumb finger for 0.5 sec
             distances = list(itertools.islice(self.index_thumb_distance, len(self.index_thumb_distance)-fps, len(self.index_thumb_distance), 1))
+            diff_list = list(distances - np.mean(distances))
             diff = distances - np.mean(distances)
+            diff_var = np.var(diff_list)
             # Classify whether the scaling motion is occurred
-            if len(diff) > 0 and np.all(diff < 10) and index_finger_grab and spread_hand_bool and self.hand_up_state: # must be fixed
+            if len(diff) > 0 and diff_var < 10 and index_finger_grab and spread_hand_bool and self.hand_up_state and float(time.time()) - self.stopping_time > 1.5: # must be fixed
+                print('scailing is started at', float(time.time()) - self.stopping_time)
                 print('previous state is', self.state)
                 self.state = 'scaling'
                 self.last_state_changed_time = float(time.time())
                 self.scale_start_value = distances[-1]
         elif self.state == 'scaling':
+            distances = list(itertools.islice(self.index_thumb_distance, len(self.index_thumb_distance)-fps, len(self.index_thumb_distance), 1))
+            diff_list = list(distances - np.mean(distances))
+            diff = distances - np.mean(distances)
+            diff_var = np.var(diff_list)
+            stopping = False
+            if diff_var < 100:
+                print('var is low now')
+                stopping = True
             # Classify whether the scaling motion is occurred
-            if index_finger_grab is False or spread_hand_bool is False or self.hand_up_state is False:
-                self.scaling_tolerance -= 1
-            else:
-                self.scaling_tolerance = min(self.scaling_tolerance + 1, fps)
-            # Check the tolerance of scaling motion miss
-            if self.scaling_tolerance <= 0:
+            if (index_finger_grab is False or spread_hand_bool is False or self.hand_up_state is False or stopping) and float(time.time()) - self.last_state_changed_time > 1.5:
                 self.state = 'standard'
-                self.scaling_tolerance = fps
+            # Check the tolerance of scaling motion miss
+                if stopping:
+                    print('stopping is occurred')
+                    self.stopping_time = float(time.time())
             else:
-                self.last_state_changed_time = float(time.time())
-                scaling_factor = self.scale_factor_calculation(scale_ratio=1.0)
+                scaling_factor = self.scale_factor_calculation(scale_ratio=30.0)
                 self.put_info(scaling_factor, 'scaling_factor')
         return spread_hand_bool, index_finger_grab
 
@@ -426,27 +434,24 @@ class handDetector():
         fps = int(fps)
         if self.state != 'translating':
             self.tolerance = fps
+            spread = False
+            for i in range(fps):
+                if self.hand_spread_bool[-1-i] == True:
+                    spread = True
             grab = True
             for i in range(fps):
                 if self.hand_grab_bool[-1-i] == False:
                     grab = False
-            if grab and self.hand_up_state:
+            if grab and self.hand_up_state and float(time.time()) - self.stopping_time > 1.5 and spread is False:
                 print('previous state is', self.state)
                 self.state = 'translating'
                 self.grab_start_value = hand_center_position
                 self.last_state_changed_time = float(time.time())
         elif self.state == 'translating':
-            translating_factor = self.translation_factor_calculation(hand_center_position, scale_ratio=0.2)
+            translating_factor = self.translation_factor_calculation(hand_center_position, scale_ratio=0.5)
             self.put_info(translating_factor, 'translating_factor')
             if self.hand_grab_bool[-1] == False or self.hand_up_state == False:
-                self.translating_tolerance -= 1
-            else:
-                self.translating_tolerance = min(self.translating_tolerance + 1, fps)
-            if self.translating_tolerance <= 0:
                 self.state = 'standard'
-                self.translating_tolerance = fps
-            else:
-                self.last_state_changed_time = float(time.time())
     
     def rotation_manipulation(self, hand_center_position, fps):
         fps = int(fps)
@@ -456,7 +461,11 @@ class handDetector():
             for i in range(fps):
                 if self.hand_spread_bool[-1-i] == False:
                     spread = False
-            if spread and self.hand_up_state:
+            grab = False
+            for i in range(fps):
+                if self.hand_grab_bool[-1-i] == True:
+                    grab = True
+            if grab is False and spread and self.hand_up_state and float(time.time()) - self.stopping_time > 1.5:
                 print('previous state is', self.state)
                 self.state = 'rotating'
                 self.spread_start_value = hand_center_position
@@ -464,6 +473,7 @@ class handDetector():
         elif self.state == 'rotating':
             rotation_factor = self.rotation_factor_calculation(hand_center_position, scale_ratio=0.15)
             self.put_info(rotation_factor, 'rotating_factor')
+            """
             if self.hand_spread_bool[-1] == False or self.hand_grab_bool[-1] is True or self.hand_up_state is False:
                 self.rotating_tolerance -= 1
             else:
@@ -473,6 +483,9 @@ class handDetector():
                 self.rotating_tolerance = int(fps)
             else:
                 self.last_state_changed_time = float(time.time())
+            """
+            if self.hand_spread_bool[-1] == False or self.hand_grab_bool[-1] is True or self.hand_up_state is False:
+                self.state = 'standard'
 
     def horizontal_hand_flip_manipulation(self, fps, finger_position_list):
         flip_standby = self.handSpread(finger_position_list, direction='left') and self.hand_up(finger_position_list, direction = 'left')
@@ -558,7 +571,16 @@ class handDetector():
     def get_3d_y_diff(self, angle_1, angle_2, depth_1, depth_2):
         y_1 = math.sin(math.radians(angle_1)) * depth_1
         y_2 = math.sin(math.radians(angle_2)) * depth_2
-        return y_2 - y_1
+        return y_1 - y_2
+    
+    def mean(self, lists):
+        sum_num = 0
+        if len(lists):
+            for i in range(len(lists)):
+                sum_num += lists[i]
+            return sum_num / len(lists)
+        else:
+            return 100
 
             
             

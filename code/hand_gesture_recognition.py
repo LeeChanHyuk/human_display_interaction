@@ -49,13 +49,13 @@ def user_state_analysis(detector, user_hand_state, fps, current_state, last_stat
             break
     if same_with_user_state:
         if current_state == 'scaling':
-            val = detector.scaling_factor[-1-fps]
+            val = detector.scaling_factor[-1]
             state = 'scaling'
         elif current_state == 'translating':
-            val = detector.translating_factor[-1-fps]
+            val = detector.translating_factor[-1]
             state = 'translating'
         elif current_state == 'rotating':
-            val = detector.rotating_factor[-1-fps]
+            val = detector.rotating_factor[-1]
             state = 'rotating'
         elif current_state == 'standard':
             state = 'standard'
@@ -66,11 +66,11 @@ def user_state_analysis(detector, user_hand_state, fps, current_state, last_stat
     if state is None:
         state = last_state
     if state == 'scaling':
-        val = detector.scaling_factor[-1-fps]
+        val = detector.scaling_factor[-1]
     elif state == 'translating':
-        val = detector.translating_factor[-1-fps]
+        val = detector.translating_factor[-1]
     elif state == 'rotating':
-        val = detector.rotating_factor[-1-fps]
+        val = detector.rotating_factor[-1]
     #print('current_State', current_state, ' state', state)
     return val, user_hand_state, state
 
@@ -86,16 +86,17 @@ def draw_hand(img, finger_list):
 
 def result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state):
     try:
-        hand_gesture_sh_array[:] = state
-        if state == 'standard':
-            hand_val_sh_array[:] = [0, 0, 0]
-        elif state == 'horizontal_hand_flip' or state == 'vertical_hand_flip':
-            val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, 'standard', 'standard')
-            hand_val_sh_array[:] = [0, 0, 0]
-        elif state == 'translating':
-            hand_val_sh_array[:] = val[:]
-        else:
-            hand_val_sh_array[:] = [val, 0, 0]
+        hand_gesture_sh_array[:] = state#
+        if val:
+            if state == 'standard':
+                hand_val_sh_array[:] = [0, 0, 0]
+            elif state == 'horizontal_hand_flip' or state == 'vertical_hand_flip':
+                val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, 'standard', 'standard')
+                hand_val_sh_array[:] = [0, 0, 0]
+            elif state == 'translating':
+                hand_val_sh_array[:] = val[:]
+            else:
+                hand_val_sh_array[:] = [val, 0, 0]
     except:
         print(1)
     return hand_gesture_sh_array, hand_val_sh_array, user_hand_state
@@ -156,7 +157,7 @@ def hand_gesture_recognition():
                 val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, 'standard', state)
                 hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
                 detector.state = state
-                #print(state)
+                print(state)
             else:
                 horizontal_hand_flip = detector.horizontal_hand_flip_manipulation(fps, finger_position_list)
                 vertical_hand_flip = detector.vertical_hand_flip_manipulation(fps, finger_position_list)
@@ -168,7 +169,7 @@ def hand_gesture_recognition():
                     val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state, state)
                     fps = show_image(img, pTime)
                     hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
-                    #print(state)
+                    print(state)
                     continue
 
                 spread_hand_bool, index_finger_grab = detector.scale_manipulation(fps, finger_position_list)
@@ -177,10 +178,10 @@ def hand_gesture_recognition():
                     val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state, state)
                     fps = show_image(img, pTime)
                     hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
-                    """if state == 'scaling':
+                    if state == 'scaling':
                         print(state, detector.scale_start_value)
                     else:
-                        print(state)"""
+                        print(state)
                     continue
                 
                 detector.translation_manipulation(hand_center_position, finger_position_list, fps)
@@ -189,10 +190,10 @@ def hand_gesture_recognition():
                     val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state, state)
                     fps = show_image(img, pTime)
                     hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
-                    """if state == 'translating':
+                    if state == 'translating':
                         print(state, detector.grab_start_value)
                     else:
-                        print(state)"""
+                        print(state)
                     continue
                 
                 detector.rotation_manipulation(hand_center_position, fps)
@@ -201,21 +202,21 @@ def hand_gesture_recognition():
                     val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state, state)
                     fps = show_image(img, pTime)
                     hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
-                    """if state == 'rotating':
+                    if state == 'rotating':
                         print(state, detector.spread_start_value)
                     else:
-                        print(state)"""
+                        print(state)
                     continue
                 fps = show_image(img, pTime)
                 val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, 'standard', state)
                 detector.state = state # because the detector cannot update the state in unfinding situation.
-                #print(state)
+                print(state)
         else:
             #print('no hand is detected')
             if float(time.time()) - last_hand_detected_time > 2:
                 val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, 'standard', state)
                 detector.state = state # because the detector cannot update the state in unfinding situation.
-                #print(state)
+                print(state)
         hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
 
         

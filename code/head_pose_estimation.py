@@ -118,10 +118,10 @@ def head_pose_estimation():
 			#print(face_coordinate_sh_array[main_user_index][:], face_center_coordinates[main_user_index])
 			main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[main_user_index][:]
 			#print('Head pose estimation fps is', str(1/(time.time() - start_time)))
-		if network_sh_array < 3:
+		if network_sh_array < 3 or network_sh_array == 4:
 			main_user_info.face_box[:] = main_user_face_box_coordinate_sh_array[0][:]
 			main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
 			calibration(main_user_info, True)
 			main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
-			cv2.imshow('draw_frame', draw_frame)
-			cv2.waitKey(1)
+			#cv2.imshow('draw_frame', draw_frame)
+			#cv2.waitKey(1)
