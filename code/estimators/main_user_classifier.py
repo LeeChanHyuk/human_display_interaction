@@ -41,7 +41,7 @@ def main_user_classification_filter(tolerance, previous_main_user_position, curr
     distance_threshold = 50
     distance = get_3d_distance(previous_main_user_position, current_main_user_position)
     if distance > distance_threshold and tolerance < 0:
-        tolerance = int(fps/2)
+        tolerance = int(fps)
     elif distance > distance_threshold:
         find_previous_main_user = False
         previous_main_user_index = 0
@@ -55,9 +55,9 @@ def main_user_classification_filter(tolerance, previous_main_user_position, curr
             main_user_index = previous_main_user_index
             tolerance -= 1
         else:
-            tolerance = int(fps/2)
+            tolerance = int(fps)
     else:
-        tolerance = int(fps/2)
+        tolerance = int(fps)
 
     return main_user_index, tolerance
 

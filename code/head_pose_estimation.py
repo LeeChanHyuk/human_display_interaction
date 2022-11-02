@@ -123,5 +123,5 @@ def head_pose_estimation():
 			main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
 			calibration(main_user_info, True)
 			main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
-			#cv2.imshow('draw_frame', draw_frame)
-			#cv2.waitKey(1)
+			cv2.imshow('draw_frame', draw_frame)
+			cv2.waitKey(1)
