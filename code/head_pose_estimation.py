@@ -9,6 +9,7 @@ import estimators.head_pose_estimation_module.service as service
 from estimators.main_user_classifier import main_user_classification, main_user_classification_filter
 from user_information.human import HumanInfo
 from estimators.calibrator import calibration
+from total_visualization import draw_axis
 
 def head_pose_estimation_func(frame, face_boxes, fa, handler):
 	feed = frame.copy()
@@ -106,7 +107,7 @@ def head_pose_estimation():
 		head_poses = head_pose_estimation_func(frame, face_coordinate_sh_array, fa, handler)
 		if len(head_poses) > 0 and len(head_poses) == len(face_center_coordinates):
 			fps = int(1 / (time.time() - start_time))
-			main_user_index = main_user_classification(face_center_coordinates, head_poses)
+			main_user_index = main_user_classification(face_center_coordinates, head_poses, use_head_pose=False)
 			main_user_index, tolerance = main_user_classification_filter(tolerance, previous_main_user_position, face_center_coordinates[main_user_index], main_user_index, face_center_coordinates, fps)
 			previous_main_user_position = face_center_coordinates[main_user_index]
 
@@ -115,6 +116,9 @@ def head_pose_estimation():
 			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_array[main_user_index][:]
 			cv2.rectangle(draw_frame, (face_coordinate_array[main_user_index][0], face_coordinate_array[main_user_index][1]),
 			(face_coordinate_array[main_user_index][2], face_coordinate_array[main_user_index][3]), (255, 0, 0), 3)
+			flip_val = 1
+			draw_frame = draw_axis(draw_frame, flip_val * head_pose_sh_array[1], head_pose_sh_array[0], flip_val * head_pose_sh_array[2], 
+			[int(face_center_coordinates[main_user_index][0]), int(face_center_coordinates[main_user_index][1] - 30)])
 			#print(face_coordinate_sh_array[main_user_index][:], face_center_coordinates[main_user_index])
 			main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[main_user_index][:]
 			#print('Head pose estimation fps is', str(1/(time.time() - start_time)))
