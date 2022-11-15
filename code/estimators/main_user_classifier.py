@@ -21,10 +21,12 @@ def main_user_drawing(frame, human_infos, main_user_index, flip_mode):
                 cv2.rectangle(frame, (int(human_info.face_box[0][0]), int(human_info.face_box[0][1])), (int(human_info.face_box[0][2]), int(human_info.face_box[0][3])), (255,0,0), 2, cv2.LINE_AA)
     return frame
 
-def main_user_classification(face_center_coordinate, head_poses, use_head_pose = False):
+def main_user_classification(face_center_coordinate, head_poses, use_head_pose = False, use_center_people = True):
     man_score = [4000] * len(head_poses) # the people must be in 4m range
     for index, human_info in enumerate(head_poses):
         man_score[index] -= face_center_coordinate[index][2]
+        if use_center_people:
+            man_score[index] -= face_center_coordinate[index][0]
         if use_head_pose and abs(head_poses[index][1]) > 50: # if yaw value of the man is over than 30 or -30, then we think that the man is not looking the display.
             man_score[index] = 0
     max_val = max(man_score)

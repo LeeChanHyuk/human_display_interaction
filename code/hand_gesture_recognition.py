@@ -146,10 +146,12 @@ def hand_gesture_recognition():
         # Find Hand
         img = detector.findHands(img, draw=False)
 
-        finger_position_list = detector.find_main_user_hand(img, main_user_face_center_coordinate_sh_array[0], depth)
+
+        finger_position_list = detector.find_main_user_hand_new(img, main_user_face_center_coordinate_sh_array[0], depth)
+        
         if finger_position_list is not None:
             last_hand_detected_time = float(time.time())
-            hand_center_position = [min(639,finger_position_list[9][1]), min(639,finger_position_list[9][2]), depth[min(639,finger_position_list[9][2]), min(639,finger_position_list[9][1])]]
+            hand_center_position = [min(639,finger_position_list[9][1]), min(639,finger_position_list[9][2]), int(depth[min(639,finger_position_list[9][2]), min(639,finger_position_list[9][1])])]
             img = draw_hand(img, finger_position_list)
             hand_fist_bool, var_mean = detector.new_hand_fist(finger_position_list, hand_center_position)
             if hand_fist_bool:

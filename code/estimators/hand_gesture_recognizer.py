@@ -52,6 +52,7 @@ class handDetector():
         self.stopping_tolerance = 20
         self.horizontal_flip_standby_tolerance = 20
         self.vertical_flip_standby_tolerance = 20
+        
 
         self.last_state_changed_time = float(time.time())
         self.vertical_flip_time = float(time.time())
@@ -146,6 +147,46 @@ class handDetector():
             # return main user left, right hands positions
             if len(main_user_finger_list) > 0:
                 return main_user_finger_list[max_index]
+            else:
+                return None
+    
+
+    # [Main user classification algorithm explanation]
+    # 1. Most closest hand with previous detected hand
+    # 2. Hand on main user eye height
+    # 3. Most closest hand with camera sensor
+
+    def find_main_user_hand_new(self, img, face_center, depth):
+        main_user_finger_list = []
+        finger_distance_with_face = []
+        finger_distance_with_last_hand = []
+
+        if self.results.multi_hand_landmarks:
+            for i in range(len(self.results.multi_hand_landmarks)):
+                fingerPositionList = self.findPosition(img, i, draw = False)
+                finger_center_position = [min(639,fingerPositionList[9][1]), min(639,fingerPositionList[9][2]), depth[min(639,fingerPositionList[9][2]), min(639,fingerPositionList[9][1])]]
+                distance = self.get_3d_distance(finger_center_position, face_center)
+                distance_last_hand = self.get_3d_distance(finger_center_position, self.last_hand_position)
+                if distance > 50:
+                    main_user_finger_list.append(fingerPositionList)
+                    finger_distance_with_face.append(distance)
+                    finger_distance_with_last_hand.append(distance_last_hand)
+            min_distance = 100000
+
+            # check the two closest finger lists from the center of the main user's face
+            # the list is consisted of left and right hand list of main user
+            scores = [4000] * len(finger_distance_with_face)
+            for i in range(len(finger_distance_with_face)):
+                scores[i] -= finger_distance_with_face[i] # with main user face
+                scores[i] -= (2*finger_distance_with_last_hand[i]) # with last hand
+                scores[i] -= main_user_finger_list[i][9][2] # with camera sensor
+
+            # return main user left, right hands positions
+            if len(main_user_finger_list) > 0:
+                max_val = max(scores)
+                main_user_index = scores.index(max_val)
+                #print(scores[main_user_index], finger_distance_with_face[main_user_index], main_user_finger_list[main_user_index][9][2])
+                return main_user_finger_list[main_user_index]
             else:
                 return None
 
