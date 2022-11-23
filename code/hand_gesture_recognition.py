@@ -147,7 +147,9 @@ def hand_gesture_recognition():
         img = detector.findHands(img, draw=False)
 
 
-        finger_position_list = detector.find_main_user_hand_new(img, main_user_face_center_coordinate_sh_array[0], depth)
+        left_finger_position_list, right_finger_position_list = detector.find_main_user_two_hand(img, main_user_face_center_coordinate_sh_array[0], depth)
+        if left_finger_position_list is None:
+            finger_position_list = detector.find_main_user_hand(img, main_user_face_center_coordinate_sh_array[0], depth)
         
         if finger_position_list is not None:
             last_hand_detected_time = float(time.time())
