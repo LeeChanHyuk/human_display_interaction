@@ -48,6 +48,9 @@ def user_state_analysis(detector, user_hand_state, fps, current_state, last_stat
             same_with_user_state = False
             break
     if same_with_user_state:
+        #if last_state != current_state and current_state == 'scaling':
+        #    print('=============================')
+        #    print(detector.last_scaling_factor)
         if current_state == 'scaling':
             val = detector.scaling_factor[-1]
             state = 'scaling'
@@ -147,13 +150,27 @@ def hand_gesture_recognition():
         img = detector.findHands(img, draw=False)
 
 
-        left_finger_position_list, right_finger_position_list = detector.find_main_user_two_hand(img, main_user_face_center_coordinate_sh_array[0], depth)
-        if left_finger_position_list is None:
+        left_finger_position_list, right_finger_position_list, left_hand_position, right_hand_position = detector.find_main_user_two_hand(img, main_user_face_center_coordinate_sh_array[0], depth)
+        if left_finger_position_list is None or right_finger_position_list is None:
             finger_position_list = detector.find_main_user_hand(img, main_user_face_center_coordinate_sh_array[0], depth)
-        
-        if finger_position_list is not None:
+        if left_hand_position is not None and right_hand_position is not None:
+            detector.scale_manipulation_new(fps, left_finger_position_list, right_finger_position_list, left_hand_position, right_hand_position, depth, state)
+            img = draw_hand(img, left_finger_position_list)
+            img = draw_hand(img, right_finger_position_list)
+            img = cv2.putText(img, 'Two hand', (300, 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            fps = show_image(img, pTime)
+            scaling_factor = detector.scaling_factor[-fps-1]
+            val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state, state)
+            hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
+            """if state == 'scaling':
+                print(state, detector.scale_start_value)
+            else:
+                print(state)"""
+            continue
+        elif finger_position_list is not None:
             last_hand_detected_time = float(time.time())
             hand_center_position = [min(639,finger_position_list[9][1]), min(639,finger_position_list[9][2]), int(depth[min(639,finger_position_list[9][2]), min(639,finger_position_list[9][1])])]
+            #print(hand_center_position)
             img = draw_hand(img, finger_position_list)
             hand_fist_bool, var_mean = detector.new_hand_fist(finger_position_list, hand_center_position)
             if hand_fist_bool:

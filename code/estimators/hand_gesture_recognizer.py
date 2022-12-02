@@ -47,6 +47,7 @@ class handDetector():
         self.object_made_time = float(time.time())
         self.state = 'standard'
         self.scale_start_value = 0
+        self.last_scaling_factor = 0
         self.grab_start_value = 0
         self.spread_start_value = 0
         self.last_hand_position = [0, 0, 0]
@@ -55,7 +56,7 @@ class handDetector():
         self.stopping_tolerance = 20
         self.horizontal_flip_standby_tolerance = 20
         self.vertical_flip_standby_tolerance = 20
-        
+        self.scale_to_standard = False
 
         self.last_state_changed_time = float(time.time())
         self.vertical_flip_time = float(time.time())
@@ -171,7 +172,6 @@ class handDetector():
         main_user_finger_list = []
         finger_distance_with_face = []
         finger_distance_with_last_hand = []
-
         if self.results.multi_hand_landmarks:
             for i in range(len(self.results.multi_hand_landmarks)):
                 fingerPositionList = self.findPosition(img, i, draw = False)
@@ -186,11 +186,11 @@ class handDetector():
 
             # check the two closest finger lists from the center of the main user's face
             # the list is consisted of left and right hand list of main user
-            scores = [4000] * len(finger_distance_with_face)
+            scores = [8000] * len(finger_distance_with_face)
             for i in range(len(finger_distance_with_face)):
-                scores[i] -= finger_distance_with_face[i] # with main user face
-                scores[i] -= (2*finger_distance_with_last_hand[i]) # with last hand
-                scores[i] -= main_user_finger_list[i][9][2] # with camera sensor
+                scores[i] -= int(finger_distance_with_face[i]) # with main user face
+                scores[i] -= int(2*finger_distance_with_last_hand[i]) # with last hand
+                scores[i] -= int(main_user_finger_list[i][9][2]) # with camera sensor
 
             # return main user left, right hands positions
             if len(main_user_finger_list) > 0:
@@ -205,50 +205,82 @@ class handDetector():
         main_user_finger_list = []
         finger_distance_with_face = []
         finger_distance_with_last_two_hand = []
+        positions = []
 
         if self.results.multi_hand_landmarks:
             for i in range(len(self.results.multi_hand_landmarks)):
                 fingerPositionList = self.findPosition(img, i, draw = False)
-                finger_center_position = [min(639,fingerPositionList[9][1]), min(639,fingerPositionList[9][2]), depth[min(639,fingerPositionList[9][2]), min(639,fingerPositionList[9][1])]]
+                finger_center_position = [min(639,fingerPositionList[9][1]), min(639,fingerPositionList[9][2]), int(depth[min(639,fingerPositionList[9][2]), min(639,fingerPositionList[9][1])])]
                 distance = self.get_3d_distance(finger_center_position, face_center)
                 distance_last_left_hand = self.get_3d_distance(finger_center_position, self.last_two_hand_position[0])
                 distance_last_right_hand = self.get_3d_distance(finger_center_position, self.last_two_hand_position[1])
                 if distance > 50:
-                    main_user_finger_list.append(fingerPositionList)
-                    finger_distance_with_face.append(distance)
-                    finger_distance_with_last_two_hand.append([distance_last_left_hand, distance_last_right_hand])
+                    duplicate = False
+                    if len(positions) > 0:
+                        for i in range(len(positions)):
+                            temp_distance = self.get_distance([finger_center_position[0], finger_center_position[1]], [positions[i][0], positions[i][1]])
+                            if temp_distance < 10:
+                                duplicate = True
+                    if not duplicate:
+                        main_user_finger_list.append(fingerPositionList)
+                        finger_distance_with_face.append(distance)
+                        finger_distance_with_last_two_hand.append([distance_last_left_hand, distance_last_right_hand])
+                        positions.append(finger_center_position)
+
+            if len(finger_distance_with_last_two_hand) <= 1:
+                #print(positions)
+                return None, None, None, None
+
             min_distance = 100000
 
             # check the two closest finger lists from the center of the main user's face
             # the list is consisted of left and right hand list of main user
-            scores = [[4000] * len(finger_distance_with_face), [4000] * len(finger_distance_with_face)]
+            scores = [[8000, 8000] for i in range(len(finger_distance_with_face))]
             for hand in range(2):
                 for i in range(len(finger_distance_with_face)):
-                    scores[hand][i] -= finger_distance_with_face[i] # with main user face
-                    scores[hand][i] -= (2*finger_distance_with_last_two_hand[hand][i]) # with last hand
-                    scores[hand][i] -= main_user_finger_list[i][9][2] # with camera sensor
+                    scores[i][hand] -= int(finger_distance_with_face[i]) # with main user face
+                    scores[i][hand] -= int(2*finger_distance_with_last_two_hand[i][hand]) # with last hand
+                    scores[i][hand] -= int(main_user_finger_list[i][9][2]) # with camera sensor
+            left_max_val = max(scores[0])
+            right_max_val = max(scores[1])
+            left_main_hand_index = scores[0].index(left_max_val)
+            right_main_hand_index = scores[1].index(right_max_val)
+            if left_main_hand_index == right_main_hand_index:
+                if left_max_val > right_max_val:
+                    scores[1][right_main_hand_index] = 0
+                    right_main_hand_index = scores[1].index(max(scores[1]))
+                else:
+                    scores[0][left_main_hand_index] = 0
+                    left_main_hand_index = scores[0].index(max(scores[0]))
+            #print(positions, left_main_hand_index, right_main_hand_index)
 
             # return main user left, right hands positions
             if len(main_user_finger_list) > 0:
-                left_max_val = max(scores[0])
-                right_max_val = max(scores[1])
-                left_main_hand_index = scores.index(left_max_val)
-                right_main_hand_index = scores.index(right_max_val)
                 left_finger_list = main_user_finger_list[left_main_hand_index]
                 right_finger_list = main_user_finger_list[right_main_hand_index]
                 left_finger_center_position = [min(640,left_finger_list[9][1]), min(639,left_finger_list[9][2]), depth[min(639,left_finger_list[9][2]), min(639,left_finger_list[9][1])]]
                 right_finger_center_position = [min(640,right_finger_list[9][1]), min(639,right_finger_list[9][2]), depth[min(639,right_finger_list[9][2]), min(639,right_finger_list[9][1])]]
-                distance_between_two_hand = self.get_distance(left_finger_center_position[1:], right_finger_center_position[1:])
-                if distance_between_two_hand < 200:
+                if left_finger_center_position[2] == 0:
+                    left_finger_center_position[2] = self.last_two_hand_position[0][2]
+                if right_finger_center_position[2] == 0:
+                    right_finger_center_position[2] = self.last_two_hand_position[1][2]
+                y_distance_between_two_hand = abs(left_finger_center_position[1] - right_finger_center_position[1])
+                z_distance_between_two_hand = abs(int(left_finger_center_position[2]) - int(right_finger_center_position[2]))
+                if z_distance_between_two_hand < 100 and y_distance_between_two_hand < 80:
                     self.last_hand_position = [int((left_finger_center_position[0] + right_finger_center_position[0]) // 2),
                     int((left_finger_center_position[1] + right_finger_center_position[1]) // 2),
                     int((left_finger_center_position[2] + right_finger_center_position[2]) // 2)]
+                    self.last_two_hand_position = [left_finger_center_position, right_finger_center_position]
                     return left_finger_list, right_finger_list, left_finger_center_position, right_finger_center_position
                 else:
+                    #print('y', y_distance_between_two_hand)
+                    #print("z", z_distance_between_two_hand)
                     return None, None, None, None
                 #print(scores[main_user_index], finger_distance_with_face[main_user_index], main_user_finger_list[main_user_index][9][2])
             else:
                 return None, None, None, None
+        else:
+            return None, None, None, None
 
 
 
@@ -485,56 +517,58 @@ class handDetector():
     def two_hand_scale_factor_calculation(self, distance_between_two_hand_xz, scale_ratio = 1.0):
         diff = distance_between_two_hand_xz - self.scale_start_value
         scaling_factor = scale_ratio * (diff / 10.0)
+        print(self.scale_start_value, distance_between_two_hand_xz, scaling_factor)
         return scaling_factor
 
 
     ####################################### hand motion classification #########################################
 
-    def scale_manipulation_new(self, fps, left_finger_position_list, right_finger_position_list, left_hand_center_position, right_hand_center_position, depth):
+    def scale_manipulation_new(self, fps, left_finger_position_list, right_finger_position_list, left_hand_center_position, right_hand_center_position, depth, state):
         fps = int(fps)
-        left_finger_center_position = [min(640,left_finger_position_list[9][1]), min(639,left_finger_position_list[9][2]), depth[min(639,left_finger_position_list[9][2]), min(639,left_finger_position_list[9][1])]]
-        right_finger_center_position = [min(640,right_finger_position_list[9][1]), min(639,right_finger_position_list[9][2]), depth[min(639,right_finger_position_list[9][2]), min(639,right_finger_position_list[9][1])]]
-        distance_between_two_hand_yz = self.get_distance(left_finger_center_position[1:], right_finger_center_position[1:])
-
-        if distance_between_two_hand_yz < 100:
-            left_hand_grab = self.new_hand_fist(left_finger_position_list, left_hand_center_position)
-            right_hand_grab = self.new_hand_fist(right_finger_position_list, right_finger_center_position)
-            if left_hand_grab is False or right_hand_grab is False:
-                distance_between_two_hand_xz = self.get_distance(left_finger_center_position[:2], right_finger_center_position[:2])
-                self.put_info(True, 'two_hand_correlated_bool')
-                self.put_info(distance_between_two_hand_xz, 'two_hand_distance')
-                if self.state != 'scaling':
-                    two_hand = True
-                    for i in range(fps):
-                        if self.two_hand_correlated_bool[-1-i] == False:
-                            two_hand = False
-                    if two_hand and float(time.time()) - self.stopping_time > 1.5:
-                        print('previous state is', self.state)
-                        distances = list(itertools.islice(self.two_hand_distance, len(self.two_hand_distance)-fps, len(self.two_hand_distance), 1))
-                        distance_mean = np.mean(distances)
-                        self.state = 'scaling'
-                        self.grab_start_value = distance_mean
-                        self.last_state_changed_time = float(time.time())
-                elif self.state == 'scaling':
+        left_finger_center_position = [min(639,left_finger_position_list[9][1]), min(639,left_finger_position_list[9][2]), depth[min(639,left_finger_position_list[9][2]), min(639,left_finger_position_list[9][1])]]
+        right_finger_center_position = [min(639,right_finger_position_list[9][1]), min(639,right_finger_position_list[9][2]), depth[min(639,right_finger_position_list[9][2]), min(639,right_finger_position_list[9][1])]]
+        left_hand_grab, area = self.new_hand_fist(left_finger_position_list, left_hand_center_position)
+        right_hand_grab, area = self.new_hand_fist(right_finger_position_list, right_finger_center_position)
+        if left_hand_grab is False or right_hand_grab is False:
+            distance_between_two_hand_xz = self.get_distance(left_finger_center_position[:2], right_finger_center_position[:2])
+            self.put_info(True, 'two_hand_correlated_bool')
+            self.put_info(distance_between_two_hand_xz, 'two_hand_distance')
+            stopping = False
+            if state != 'scaling':
+                two_hand = True
+                for i in range(fps):
+                    if self.two_hand_correlated_bool[-1-i] == False:
+                        two_hand = False
+                if two_hand and float(time.time()) - self.stopping_time > 1.5:
                     distances = list(itertools.islice(self.two_hand_distance, len(self.two_hand_distance)-fps, len(self.two_hand_distance), 1))
-                    diff_list = list(distances - np.mean(distances))
-                    diff = distances - np.mean(distances)
-                    diff_var = np.var(diff_list)
-                    stopping = False
-                    if diff_var < 200:
-                        print('var is low now')
-                        stopping = True
-                if stopping and float(time.time()) - self.last_state_changed_time > 1.5:
-                    self.state = 'standard'
-                # Check the tolerance of scaling motion miss
-                    if stopping:
-                        print('stopping is occurred')
-                        self.stopping_time = float(time.time())
-                else:
-                    scaling_factor = self.two_hand_scale_factor_calculation(distance_between_two_hand_xz, scale_ratio = 1.0)
-                    self.put_info(scaling_factor, 'scaling_factor')
-            else:
+                    distance_mean = np.mean(distances)
+                    self.state = 'scaling'
+                    self.scale_start_value = distance_mean
+                    self.last_state_changed_time = float(time.time())
+            elif state == 'scaling':
+                distances = list(itertools.islice(self.two_hand_distance, len(self.two_hand_distance)-fps, len(self.two_hand_distance), 1))
+                diff_list = list(distances - np.mean(distances))
+                diff = distances - np.mean(distances)
+                diff_var = np.var(diff_list)
+                if diff_var < 200:
+                    print('var is low now')
+                    stopping = True
+            if stopping and float(time.time()) - self.last_state_changed_time > 1.5:
                 self.state = 'standard'
+            # Check the tolerance of scaling motion miss
+                if stopping:
+                    self.stopping_time = float(time.time())
+            elif state == 'scaling':
+                scaling_factor = self.two_hand_scale_factor_calculation(distance_between_two_hand_xz, scale_ratio = 5.0)
+                self.put_info(scaling_factor, 'scaling_factor')
+            if state == 'scaling' and self.state == 'standard':
+                self.scale_to_standard = True
+            if state == 'standard' and self.state == 'standard' and self.scale_to_standard:
+                self.scale_to_standard = False
+                #self.last_scaling_factor = self.scaling_factor[-1]
+        else:
+            print(left_hand_grab, right_hand_grab)
+            self.state = 'standard'
 
 
     def scale_manipulation(self, fps, finger_position_list):
