@@ -192,18 +192,19 @@ def hand_gesture_recognition():
                     hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
                     #print(state)
                     continue
-
-                spread_hand_bool, index_finger_grab = detector.scale_manipulation(fps, finger_position_list)
-                if detector.state == 'scaling':
-                    scaling_factor = detector.scaling_factor[-fps-1]
-                    val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state, state)
-                    fps = show_image(img, pTime)
-                    hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
-                    """if state == 'scaling':
-                        print(state, detector.scale_start_value)
-                    else:
-                        print(state)"""
-                    continue
+                
+                detector.hand_state_estimation(fps, finger_position_list)
+                #spread_hand_bool, index_finger_grab = detector.scale_manipulation(fps, finger_position_list)
+                #if detector.state == 'scaling':
+                #    scaling_factor = detector.scaling_factor[-fps-1]
+                #    val, user_hand_state, state = user_state_analysis(detector, user_hand_state, fps, detector.state, state)
+                #    fps = show_image(img, pTime)
+                #    hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
+                #    """if state == 'scaling':
+                #        print(state, detector.scale_start_value)
+                #    else:
+                #        print(state)"""
+                #    continue
                 
                 detector.translation_manipulation(hand_center_position, finger_position_list, fps)
                 if detector.state == 'translating':

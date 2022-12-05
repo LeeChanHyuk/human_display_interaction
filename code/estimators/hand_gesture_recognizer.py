@@ -619,6 +619,18 @@ class handDetector():
                 self.put_info(scaling_factor, 'scaling_factor')
         return spread_hand_bool, index_finger_grab
 
+    def hand_state_estimation(self, fps, finger_position_list):
+        fps = int(fps)
+        spread_hand_bool = self.handSpread(finger_position_list, direction='up')
+        grab_bool = self.handGrab(finger_position_list, 'up')
+        self.put_info(grab_bool, 'hand_grab_bool')
+        self.hand_up_state = self.hand_up(finger_position_list, direction='up')
+
+        # Put the info into the detector deques
+        self.put_info(spread_hand_bool, 'hand_spread_bool')
+
+
+
     def translation_manipulation(self, hand_center_position, finger_position_list, fps):
         fps = int(fps)
         if self.state != 'translating':
