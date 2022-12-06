@@ -40,6 +40,7 @@ class handDetector():
         self.rotating_factor = deque()
         self.two_hand_correlated_bool = deque()
         self.two_hand_distance = deque()
+        self.finger_top_position = deque()
         
         self.deque_initialization()
 
@@ -78,6 +79,7 @@ class handDetector():
             self.vertical_hand_flip_standby_bool.append(False)
             self.two_hand_correlated_bool.append(False)
             self.two_hand_distance.append(0)
+            self.finger_top_position.append([0, 0, 0])
     
     def put_info(self, data, sort):
         if sort == 'index_thumb_distance':
@@ -110,6 +112,9 @@ class handDetector():
         elif sort == 'two_hand_distance':
             val = self.two_hand_distance.popleft()
             self.two_hand_distance.append(data)
+        elif sort == 'finger_top_position':
+            val = self.finger_top_position.popleft()
+            self.finger_top_position.append(data)
 
     ################################# hand detection ###############################
 
@@ -629,6 +634,48 @@ class handDetector():
         # Put the info into the detector deques
         self.put_info(spread_hand_bool, 'hand_spread_bool')
 
+    def hand_shake_estimation(self, fps, finger_position_list, depth):
+        finger_top_median = []
+        for i in range(1, 3):
+            temp_finger_top = np.median([finger_position_list[4][i], finger_position_list[8][i], finger_position_list[12][i], finger_position_list[16][i], finger_position_list[20][i]])
+            finger_top_median.append(temp_finger_top)
+        finger_top_median.append(int(depth[int(finger_top_median[1]), int(finger_top_median[0])]))
+        self.put_info(finger_top_median, 'finger_top_position')
+        if self.hand_up_state and self.hand_grab_bool[-1] == False and self.hand_spread_bool[-1]:
+            fingers_top = list(itertools.islice(self.finger_top_position, len(self.finger_top_position)-fps, len(self.finger_top_position), 1))
+            sequence_median_val = np.median(fingers_top)
+            sequence_diff = np.max(fingers_top) - np.min(fingers_top)
+            if sequence_diff < 50:
+                return
+            directions = [0, 0, 0, 0]
+            start_index = 1
+            state = None
+            left_tolerance = 0
+            right_tolerance = 0
+            state_change_num = 0
+            while start_index < len(fingers_top):
+                if fingers_top[start_index][0] - fingers_top[start_index-1][0]:
+                    if state == None:
+                        state = 'right'
+                        right_tolerance = 0
+                    if state == 'left' and right_tolerance == 0:
+                        right_tolerance += 1
+                    elif state == 'left' and right_tolerance:
+                        state_change_num += 1
+                        state = 'right'
+                        right_tolerance = 0
+                else:
+                    if state == None:
+                        state = 'left'
+                        left_tolerance = 0
+                    if state == 'right' and left_tolerance == 0:
+                        left_tolerance += 1
+                    elif state == 'left' and left_tolerance:
+                        state_change_num += 1
+                        state = 'left'
+                        left_tolerance = 0
+                start_index += 1 
+            print(state_change_num)
 
 
     def translation_manipulation(self, hand_center_position, finger_position_list, fps):

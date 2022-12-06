@@ -205,7 +205,7 @@ def hand_gesture_recognition():
                 #    else:
                 #        print(state)"""
                 #    continue
-                
+                detector.hand_shake_estimation(fps, finger_position_list, depth)
                 detector.translation_manipulation(hand_center_position, finger_position_list, fps)
                 if detector.state == 'translating':
                     translating_factor = detector.translating_factor[-fps-1]
