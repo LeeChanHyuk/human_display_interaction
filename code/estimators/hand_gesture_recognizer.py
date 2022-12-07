@@ -522,7 +522,7 @@ class handDetector():
     def two_hand_scale_factor_calculation(self, distance_between_two_hand_xz, scale_ratio = 1.0):
         diff = distance_between_two_hand_xz - self.scale_start_value
         scaling_factor = scale_ratio * (diff / 10.0)
-        print(self.scale_start_value, distance_between_two_hand_xz, scaling_factor)
+        #print(self.scale_start_value, distance_between_two_hand_xz, scaling_factor)
         return scaling_factor
 
 
@@ -556,7 +556,6 @@ class handDetector():
                 diff = distances - np.mean(distances)
                 diff_var = np.var(diff_list)
                 if diff_var < 200:
-                    print('var is low now')
                     stopping = True
             if stopping and float(time.time()) - self.last_state_changed_time > 1.5:
                 self.state = 'standard'
@@ -565,6 +564,7 @@ class handDetector():
                     self.stopping_time = float(time.time())
             elif state == 'scaling':
                 scaling_factor = self.two_hand_scale_factor_calculation(distance_between_two_hand_xz, scale_ratio = 5.0)
+                print(self.scaling_factor[-1], scaling_factor)
                 self.put_info(scaling_factor, 'scaling_factor')
             if state == 'scaling' and self.state == 'standard':
                 self.scale_to_standard = True
@@ -643,6 +643,8 @@ class handDetector():
         self.put_info(finger_top_median, 'finger_top_position')
         if self.hand_up_state and self.hand_grab_bool[-1] == False and self.hand_spread_bool[-1]:
             fingers_top = list(itertools.islice(self.finger_top_position, len(self.finger_top_position)-fps, len(self.finger_top_position), 1))
+            if len(fingers_top) == 0:
+                return
             sequence_median_val = np.median(fingers_top)
             sequence_diff = np.max(fingers_top[:][0]) - np.min(fingers_top[:][0])
             if sequence_diff < 50:
@@ -675,12 +677,14 @@ class handDetector():
                         state = 'left'
                         left_tolerance = 0
                 start_index += 1 
-            if state_change_num > 3:
+            if state_change_num > 5:
                 self.state = 'hand_shake'
-            else:
+                print(state_change_num)
+            elif self.state == 'hand_shake':
                 self.state = 'standard'
         else:
-            self.state = 'standard'
+            if self.state == 'hand_shake':
+                self.state = 'standard'
 
     def translation_manipulation(self, hand_center_position, finger_position_list, fps):
         fps = int(fps)
@@ -718,7 +722,7 @@ class handDetector():
                 if self.hand_grab_bool[-1-i] == True:
                     grab = True
             if grab is False and spread and self.hand_up_state and float(time.time()) - self.stopping_time > 1.5:
-                print('previous state is', self.state)
+                #print('previous state is', self.state)
                 self.state = 'rotating'
                 self.spread_start_value = hand_center_position
                 self.last_state_changed_time = float(time.time())
