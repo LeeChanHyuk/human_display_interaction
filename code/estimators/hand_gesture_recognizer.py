@@ -639,12 +639,12 @@ class handDetector():
         for i in range(1, 3):
             temp_finger_top = np.median([finger_position_list[4][i], finger_position_list[8][i], finger_position_list[12][i], finger_position_list[16][i], finger_position_list[20][i]])
             finger_top_median.append(temp_finger_top)
-        finger_top_median.append(int(depth[int(finger_top_median[1]), int(finger_top_median[0])]))
+        finger_top_median.append(int(depth[min(639,int(finger_top_median[1])), min(639,int(finger_top_median[0]))]))
         self.put_info(finger_top_median, 'finger_top_position')
         if self.hand_up_state and self.hand_grab_bool[-1] == False and self.hand_spread_bool[-1]:
             fingers_top = list(itertools.islice(self.finger_top_position, len(self.finger_top_position)-fps, len(self.finger_top_position), 1))
             sequence_median_val = np.median(fingers_top)
-            sequence_diff = np.max(fingers_top) - np.min(fingers_top)
+            sequence_diff = np.max(fingers_top[:][0]) - np.min(fingers_top[:][0])
             if sequence_diff < 50:
                 return
             directions = [0, 0, 0, 0]
@@ -654,29 +654,33 @@ class handDetector():
             right_tolerance = 0
             state_change_num = 0
             while start_index < len(fingers_top):
-                if fingers_top[start_index][0] - fingers_top[start_index-1][0]:
+                if fingers_top[start_index][0] - fingers_top[start_index-1][0] > 5:
                     if state == None:
                         state = 'right'
                         right_tolerance = 0
-                    if state == 'left' and right_tolerance == 0:
+                    elif state == 'left' and right_tolerance == 0:
                         right_tolerance += 1
                     elif state == 'left' and right_tolerance:
                         state_change_num += 1
                         state = 'right'
                         right_tolerance = 0
-                else:
+                elif fingers_top[start_index][0] - fingers_top[start_index-1][0] < -5:
                     if state == None:
                         state = 'left'
                         left_tolerance = 0
-                    if state == 'right' and left_tolerance == 0:
+                    elif state == 'right' and left_tolerance == 0:
                         left_tolerance += 1
-                    elif state == 'left' and left_tolerance:
+                    elif state == 'right' and left_tolerance:
                         state_change_num += 1
                         state = 'left'
                         left_tolerance = 0
                 start_index += 1 
-            print(state_change_num)
-
+            if state_change_num > 3:
+                self.state = 'hand_shake'
+            else:
+                self.state = 'standard'
+        else:
+            self.state = 'standard'
 
     def translation_manipulation(self, hand_center_position, finger_position_list, fps):
         fps = int(fps)
