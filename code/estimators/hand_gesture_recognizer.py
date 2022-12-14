@@ -130,6 +130,7 @@ class handDetector():
             self.find_hand = False
         return img
     
+    # find finger positions in the hand
     def findPosition(self, img, handNo=0, draw=True):
         fingerPositionList = []
         if self.find_hand:
@@ -140,6 +141,7 @@ class handDetector():
                 fingerPositionList.append([id, cx, cy])
         return fingerPositionList
 
+    # old function (deprecated)
     def find_main_user_hand_old(self, img, face_center, depth):
         main_user_finger_list = []
         finger_distance = []
@@ -206,6 +208,7 @@ class handDetector():
             else:
                 return None
 
+    # find main user's two hand (left and right)
     def find_main_user_two_hand(self, img, face_center, depth):
         main_user_finger_list = []
         finger_distance_with_face = []
@@ -291,6 +294,7 @@ class handDetector():
 
     ############################################### hand state analysis functions ###############################################
 
+    # estimate the grab strength
     def index_finger_grab(self, finger_position_list):
         index_finger_vec1 = [finger_position_list[6][1] - finger_position_list[5][1], finger_position_list[6][2] - finger_position_list[5][2]]
         index_finger_vec2 = [finger_position_list[8][1] - finger_position_list[7][1], finger_position_list[8][2] - finger_position_list[7][2]]
@@ -309,6 +313,7 @@ class handDetector():
         else:
             return False
 
+    # estimate the direction of the finger
     def fingersUp(self, finger_list, direction):
         fingers = []
         # up, right, down, left
@@ -362,6 +367,7 @@ class handDetector():
                     fingers.append(0)
         return fingers
 
+    # estimate the boolean of the hand spread
     def handSpread(self, finger_list, direction):
         spread_hands_bool = False
         fingers = self.fingersUp(finger_list, direction)
@@ -369,6 +375,7 @@ class handDetector():
             spread_hands_bool = True
         return spread_hands_bool
 
+    # estimate the boolean of the finger grab
     def fingerGrab(self, finger_lists, index, direction):
         # middle
         distance_1 = self.get_distance(finger_lists[index], finger_lists[index+1])
@@ -393,6 +400,7 @@ class handDetector():
         else:
             return False
 
+    # estimate the boolean of the hand grab
     def handGrab(self, finger_lists, direction):
         index_grab = self.fingerGrab(finger_lists, 5, direction)
         middle_grab = self.fingerGrab(finger_lists, 9, direction)
@@ -403,6 +411,7 @@ class handDetector():
         else:
             return False
 
+    # estimate the boolean of the hand fist (deprecated)
     def hand_fist(self, finger_position_list, hand_center_position):
         finger_x_list = [finger_position_list[2][1], finger_position_list[3][1], finger_position_list[4][1], \
             finger_position_list[6][1], finger_position_list[7][1], finger_position_list[8][1], \
@@ -433,6 +442,7 @@ class handDetector():
         else:
             return False, var_mean
     
+    # estimate the boolean of the hand fist
     def new_hand_fist(self, finger_position_list, hand_center_position):
         if hand_center_position[2] != 0:
             self.last_hand_position = hand_center_position
@@ -463,6 +473,7 @@ class handDetector():
         else:
             return False, area
 
+    # estimate the boolean of the hand direction (deprecated)
     def hand_up(self, finger_position_list, direction):
         success = True
         if direction == 'up':
@@ -528,6 +539,7 @@ class handDetector():
 
     ####################################### hand motion classification #########################################
 
+    # estimate the boolean of the hand spreading for controlling 3D object's scale
     def scale_manipulation_new(self, fps, left_finger_position_list, right_finger_position_list, left_hand_center_position, right_hand_center_position, depth, state):
         fps = int(fps)
         left_finger_center_position = [min(639,left_finger_position_list[9][1]), min(639,left_finger_position_list[9][2]), depth[min(639,left_finger_position_list[9][2]), min(639,left_finger_position_list[9][1])]]
@@ -575,7 +587,7 @@ class handDetector():
             print(left_hand_grab, right_hand_grab)
             self.state = 'standard'
 
-
+    # estimate the boolean of the hand spreading for controlling 3D object's scale (for one hand) (deprecated)
     def scale_manipulation(self, fps, finger_position_list):
         fps = int(fps)
         spread_hand_bool = self.handSpread(finger_position_list, direction='up')
@@ -624,6 +636,7 @@ class handDetector():
                 self.put_info(scaling_factor, 'scaling_factor')
         return spread_hand_bool, index_finger_grab
 
+    # analyze the hand posture to recognize many hand state
     def hand_state_estimation(self, fps, finger_position_list):
         fps = int(fps)
         spread_hand_bool = self.handSpread(finger_position_list, direction='up')
@@ -634,6 +647,7 @@ class handDetector():
         # Put the info into the detector deques
         self.put_info(spread_hand_bool, 'hand_spread_bool')
 
+    # estimate the boolean of the hand shaking for reset the 3D object
     def hand_shake_estimation(self, fps, finger_position_list, depth):
         finger_top_median = []
         for i in range(1, 3):
@@ -686,6 +700,7 @@ class handDetector():
             if self.state == 'hand_shake':
                 self.state = 'standard'
 
+    # estimate the boolean of the hand little grabbing for controlling 3D object's translation
     def translation_manipulation(self, hand_center_position, finger_position_list, fps):
         fps = int(fps)
         if self.state != 'translating':
@@ -709,6 +724,7 @@ class handDetector():
             if self.hand_grab_bool[-1] == False or self.hand_up_state == False:
                 self.state = 'standard'
     
+    # estimate the boolean of the hand spreading for controlling 3D object's rotation
     def rotation_manipulation(self, hand_center_position, fps):
         fps = int(fps)
         if self.state != 'rotating':
