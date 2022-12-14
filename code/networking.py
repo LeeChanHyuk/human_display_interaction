@@ -4,7 +4,7 @@ import zmq
 import numpy as np
 from multiprocessing import shared_memory
 
-
+# ZMQ REQ-REP Pattern 
 def router_function():
     context2 = zmq.Context()
     to_renderer = context2.socket(zmq.REP)
@@ -57,17 +57,23 @@ def router_function():
 
     while True:
         start_time = time.time()
+        # receive the message from the renderer
         message = to_renderer.recv()
-        #message = '3'
+        # this message is about the mode of the renderer
         network_sh_array[:] = int(message)
         message = str(message)[2]
+        # face center information
         face_center_info = str(main_user_calib_face_center_coordinate_sh_array[0][0])+ ' ' + str(main_user_calib_face_center_coordinate_sh_array[0][1]) + ' ' + \
                 str(main_user_calib_face_center_coordinate_sh_array[0][2]) + ' ' + str(main_user_face_center_coordinate_sh_array[0][2])
+        # head pose information
         head_pose_info = str(head_pose_sh_array[0]) + ' ' +str(head_pose_sh_array[1]) + ' ' + str(head_pose_sh_array[2])
+        # action information
         action_info = str(action_sh_array[0])
+        # hand gesture information
         hand_info = str(hand_gesture_sh_array[0])
         hand_info = hand_info[2:len(hand_info)-1]
         hand_val = str(hand_val_sh_array[0]) + ' ' + str(hand_val_sh_array[1]) + ' ' + str(hand_val_sh_array[2])
+        # send message to the renderer with the mode of the renderer
         if message == '0':
             send_message = 'N'
         elif message == '1':
@@ -79,12 +85,8 @@ def router_function():
         elif message == '4':
             send_message = 'H' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + hand_info + ' ' + hand_val
         to_renderer.send_string(send_message)
-        """tmes = time.time() - start_time
-        if tmes == 0:
-            tmes = 1
-        print('networking fps is', str(1/tmes))"""
 
-
+# old networking module (not used)
 def networking(human_info, mode, base_path):
     communication_write = open(os.path.join(base_path, 'communication.txt'), 'r+')
     communication_write.write(str(mode) + '\n')

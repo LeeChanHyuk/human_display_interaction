@@ -170,6 +170,7 @@ def run(
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
+# Copy the information from the previous human_info object into the new human_info object
 def human_info_deep_copy(human_infos, human_info):
 	reference_human_info = human_infos[-1]
 	human_info.center_eyes = reference_human_info.center_eyes
@@ -193,6 +194,7 @@ def human_info_deep_copy(human_infos, human_info):
 	return human_info
 
 def yolo_initialization(frame_shape, weights, data, depth_face_tracker = False):
+    # GPU Devices
     device = select_device('0')
     model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
     stride, names, pt = model.stride, model.names, model.pt
@@ -208,20 +210,24 @@ def yolo_initialization(frame_shape, weights, data, depth_face_tracker = False):
 
 
 def yolo_face_detection(im, dt, device, model, frame_shape) -> np.array:
+    # Resize the input image
     height, width, channel = im.shape
     if im.shape != frame_shape:
         im = cv2.resize(im, frame_shape)
+
+    # Change the input image into the tensor
     gn = torch.tensor(im.shape)[[1, 0, 1, 0]]  # normalization gain whwh
     im = im[None, :]
     im = im[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW
     im = np.ascontiguousarray(im)  # contiguous
-    # human_info objects
+
     with dt[0]:
         im = torch.from_numpy(im).to(device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
+
     # Inference
     with dt[1]:
         pred = model(im, augment=False, visualize=False)
@@ -248,6 +254,7 @@ def yolo_face_detection(im, dt, device, model, frame_shape) -> np.array:
                 x1, y1= int(x-(w/2)), int(y-(h/2))
                 x2, y2 = int(x1 + w -1), int(y1 + h - 1)
                 result.append([x1, y1, x2, y2])
+
     return np.array(result)
 
 def parse_opt():

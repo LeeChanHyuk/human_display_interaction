@@ -193,21 +193,28 @@ def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height
 
 
 def body_pose_estimation_func(pose, frame, depth):
+    # declare the blank lists
     body_poses = []
     body_coordinates = []
     height, width = frame.shape[:2]
+    # body pose estimation
     results = pose.process(frame)
+    # analyze the body pose from the module
     if results.pose_landmarks:
         body_landmarks= results.pose_landmarks
         body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
             for lmk in body_landmarks.landmark], dtype=np.float32)
 
+        # extract the body keypoint positions from the result of the module
         left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye3 = body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height)
         #draw_frame = visualization_tool.draw_body_keypoints(draw_frame, [left_shoulder, right_shoulder, center_stomach, center_mouth, center_eye3], flip_mode)
+        # calculate the main body pose
         upper_body_yaw, upper_body_pitch, upper_body_roll = upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
+        # radian to degree
         upper_body_yaw = upper_body_yaw * 180 / math.pi
         upper_body_pitch = upper_body_pitch * 180 / math.pi
         upper_body_roll = upper_body_roll * 180 / math.pi
+        # append the results into the lists
         body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
         body_coordinates.append([center_eye3, center_mouth, left_shoulder, right_shoulder, center_stomach])
 

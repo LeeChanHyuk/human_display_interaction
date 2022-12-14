@@ -5,6 +5,7 @@ from estimators.body_pose_estimator import body_pose_estimation_func
 
 
 def body_pose_estimation():
+	# body pose estimation is proceed by the mediapipe's pose module
 	mp_drawing = mp.solutions.drawing_utils
 	mp_pose = mp.solutions.pose
 
@@ -36,14 +37,18 @@ def body_pose_estimation():
 	network_shm = shared_memory.SharedMemory(name = 'networking')
 	network_sh_array = np.ndarray(network_shape, dtype=np.uint8, buffer=network_shm.buf)
 
+	# implement the body pose estimation module
 	with mp_pose.Pose(
 		min_detection_confidence=0.5,
 		min_tracking_confidence=0.5,
 		model_complexity=1) as pose:
 		while 1:
+			# if you don't use the action recognition function, the body pose estimation does not be implemented.
 			if network_sh_array[:] < 3:
 				continue
+			# implement the body pose estimation function
 			body_poses, body_coordinates = body_pose_estimation_func(pose, frame, depth)
+			# save the info into the shared memory for using the info in other modules
 			body_pose_sh_array[:] = body_pose_size_array[:]
 			body_pose_sh_array[:] = body_poses[:]
 			body_coordinates_sh_array[:] = body_coordinates_size_array[:]

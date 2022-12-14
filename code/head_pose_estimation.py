@@ -13,12 +13,15 @@ from total_visualization import draw_axis
 
 def head_pose_estimation_func(frame, face_boxes, fa, handler):
 	feed = frame.copy()
+
 	# Estimate head pose
 	head_poses = []
 	for i in range(len(face_boxes)):
+		# Face box coordinates
 		x1, y1, x2, y2 = map(int, face_boxes[i][:])
 		if x1 == 0 and y1 == 0 and x2 == 0 and y2 == 0:
 			break
+		# Get face landmarks from the face image for estmating user head poses
 		for results in fa.get_landmarks(feed, np.expand_dims(np.array([int(x1), int(y1), int(x2), int(y2)]), axis=0)):
 			pitch, yaw, roll = handler(frame, results, color=(125, 125, 125))
 			head_poses.append([pitch, yaw, roll])
@@ -88,44 +91,59 @@ def head_pose_estimation():
 	while 1:
 		start_time = time.time()
 		face_center_coordinates = []
+		# copy the face coordinates from the shared memory (for safety)
 		face_coordinate_array[:] = face_coordinate_sh_array[:]
+		# deal 10 people (maximum num)
 		for i in range(10):
 			x1, y1, x2, y2 = face_coordinate_sh_array[i][:]
 			if int(x1) == 0 and int(x2) == 0:
 				break
+			# calculate the face 3D center coordinates from the face coordinates
 			face_center_x, face_center_y = int((x1 + x2) / 2), int((y1 + y2) / 2)
 			face_center_x = min(max(0, face_center_x), 639)
 			face_center_y = min(max(0, face_center_y), 639)
 			face_center_z = depth[face_center_y, face_center_x]
 			face_center_coordinates.append([face_center_x, face_center_y, face_center_z])
+		# network_sh_array means the mode of the renderer 
+		# (1 - face tracking / 2 - main user classification / 3 - action recognition / 4 - hand gesture recognition)
 		if network_sh_array < 2:
 			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_sh_array[0][:]
 			if len(face_center_coordinates) > 0:
 				main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[0][:]
 			continue
 		draw_frame[:] = frame[:]
+		# head pose estimation
 		head_poses = head_pose_estimation_func(frame, face_coordinate_sh_array, fa, handler)
+
+		# if the head pose is estimated correctly, the main user classification process is proceeded.
 		if len(head_poses) > 0 and len(head_poses) == len(face_center_coordinates):
 			fps = int(1 / (time.time() - start_time))
+			# main user classification
 			main_user_index = main_user_classification(face_center_coordinates, head_poses, use_head_pose=False)
+			# filter the main user information for stability
 			main_user_index, tolerance = main_user_classification_filter(tolerance, previous_main_user_position, face_center_coordinates[main_user_index], main_user_index, face_center_coordinates, fps)
+			# save the information of the main user
 			previous_main_user_position = face_center_coordinates[main_user_index]
-
-			# only store main user information
+			# only store the head pose of main user information
 			head_pose_sh_array[:] = np.array(head_poses[main_user_index])[:]
+			# save the face box coordinate of the main user
 			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_array[main_user_index][:]
+			# draw the main user face
 			cv2.rectangle(draw_frame, (face_coordinate_array[main_user_index][0], face_coordinate_array[main_user_index][1]),
 			(face_coordinate_array[main_user_index][2], face_coordinate_array[main_user_index][3]), (255, 0, 0), 3)
 			flip_val = 1
+			# draw the head pose of the main user
 			draw_frame = draw_axis(draw_frame, flip_val * head_pose_sh_array[1], head_pose_sh_array[0], flip_val * head_pose_sh_array[2], 
 			[int(face_center_coordinates[main_user_index][0]), int(face_center_coordinates[main_user_index][1] - 30)])
-			#print(face_coordinate_sh_array[main_user_index][:], face_center_coordinates[main_user_index])
 			main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[main_user_index][:]
-			#print('Head pose estimation fps is', str(1/(time.time() - start_time)))
+		# if you don't use the action recognition function, you must calibrate the face coordinate
+		# because the calibration process is included in the action recognition process
 		if network_sh_array < 3 or network_sh_array == 4:
 			main_user_info.face_box[:] = main_user_face_box_coordinate_sh_array[0][:]
 			main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
+			# calibrate the user info
 			calibration(main_user_info, True)
 			main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
+			# draw the image of the camera with user info
 			cv2.imshow('draw_frame', draw_frame)
 			cv2.waitKey(1)

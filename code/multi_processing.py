@@ -4,10 +4,12 @@ from multiprocessing import Process, shared_memory
 from get_input_from_cam import get_input_from_cam
 from face_detection import face_detection
 from head_pose_estimation import head_pose_estimation
-#from body_pose_estimation import body_pose_estimation
-#from action_recognition import action_recognition
 from networking import router_function
 from hand_gesture_recognition import hand_gesture_recognition
+
+########## If you want to use the action recognition function, please delete the below annotation #########
+#from body_pose_estimation import body_pose_estimation
+#from action_recognition import action_recognition
 
 if __name__ == "__main__":
 	##################### shared memory initialization ########################
@@ -41,26 +43,26 @@ if __name__ == "__main__":
 	size_array = np.zeros(main_user_calib_face_center_coordinate_shape, dtype=np.int64)
 	main_user_calib_face_center_coordinate_shm = shared_memory.SharedMemory(create=True, size=size_array.nbytes, name = 'main_user_calib_face_center_coordinate')
 
-    # head pose shm
-	head_pose_shape = (3) # for 1 people
+    # head pose shared memory
+	head_pose_shape = (3) # for main user
 	size_array = np.zeros(head_pose_shape, dtype=np.int64)
 	head_pose_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'head_pose')
 	head_pose_sh_array = np.ndarray(head_pose_shape, dtype=np.int64, buffer=head_pose_shm.buf)
 
-    # body pose shm
-	body_pose_shape = (3) # for 1 people
+    # body pose share memory
+	body_pose_shape = (3) # for main user
 	size_array = np.zeros(body_pose_shape, dtype=np.int64)
 	body_pose_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'body_pose')
 	body_pose_sh_array = np.ndarray(body_pose_shape, dtype=np.int64, buffer=body_pose_shm.buf)
 
     # body coordinates shm
-	body_coordinates_shape = (5, 3) # for 1 people
+	body_coordinates_shape = (5, 3) # for main user
 	size_array = np.zeros(body_coordinates_shape, dtype=np.int64)
 	body_coordinates_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'body_coordinates')
 	body_coordinates_sh_array = np.ndarray(body_pose_shape, dtype=np.int64, buffer=body_coordinates_shm.buf)
 
     # action shm
-	action_shape = (1)
+	action_shape = (1) # for main user
 	size_array = np.chararray(action_shape, itemsize=10)
 	action_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'action')
 	action_sh_array = np.chararray(action_shape, itemsize=10, buffer=action_shm.buf)
@@ -73,14 +75,14 @@ if __name__ == "__main__":
 	network_sh_array[:] = 2
 
     # hand_gesture shm
-	hand_gesture_shape = (1)
+	hand_gesture_shape = (1) # for main user
 	size_array = np.chararray(hand_gesture_shape, itemsize=30)
 	hand_gesture_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'hand_gesture')
 	hand_gesture_sh_array = np.chararray(hand_gesture_shape, itemsize=30, buffer=hand_gesture_shm.buf)
 	hand_gesture_sh_array[:] = 'standard'
 
     # hand_gesture 
-	hand_val_shape = (3)
+	hand_val_shape = (3) # for main user
 	size_array = np.zeros(hand_val_shape, dtype=np.int64)
 	hand_val_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'hand_val')
 	hand_val_sh_array = np.ndarray(hand_val_shape, dtype=np.int64, buffer=hand_val_shm.buf)

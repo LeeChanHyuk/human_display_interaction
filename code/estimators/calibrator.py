@@ -32,7 +32,7 @@ def box_extraction(face_landmarks, width, height):
     right_eye_boxes.append([right_eye_inner_x1-eye_detection_margin, right_eye_inner_y1-eye_detection_margin, right_eye_inner_x2+eye_detection_margin, right_eye_inner_y2+eye_detection_margin])
     return face_boxes, left_eye_boxes, right_eye_boxes
 
-
+# calibrate the main user's face position from the camera (Realsense D435) 
 def calibration(human_info, real_sense_calibration = True):
     center_eyes = human_info.center_eyes[-1].copy()
     calib_parameter = [0.9245, -0.004, 0.0584, -0.0242, 0.9475, -0.0083, 0.0208, 0.1013, 0.8956, -32.2596, 121.3725, 26.666 + 200 + 350]
@@ -70,6 +70,7 @@ def calibration(human_info, real_sense_calibration = True):
     #new_y = eye_z * math.sin(math.radians(detected_y_angle))
     #y_offset = eye_z * math.sin(math.radians(camera_vertical_angle/2))
 
+# old face detection module for using mediapipe's face detection module (not used)
 def face_detection(frame, depth, face_mesh, human_infos = None):
     height, width = frame.shape[:2]
     bgr_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -107,6 +108,7 @@ def face_detection(frame, depth, face_mesh, human_infos = None):
     else:
         return human_infos, 0
 
+# old face detection module with resnet (not used)
 def resnet_face_detection(frame, depth, net, human_infos = None) -> object:
     height, width = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(cv2.resize(frame,(300,300)),1.0,(300,300),(104.0, 177.0, 123.0))
@@ -134,8 +136,6 @@ def resnet_face_detection(frame, depth, net, human_infos = None) -> object:
         # draw the bounding box and write confidence
             text = "{:.2f}%".format(confidence * 100)
             y = startY - 10 if startY - 10 > 10 else startY + 10
-            #cv2.rectangle(frame, (startX, startY), (endX, endY),(255, 255, 255), 2)
-            #cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
 
             human_info.face_box = face_box # face box is not used for action recognition. Thus, face_box is not list.
             human_info.face_detection_confidence = confidence
@@ -173,6 +173,7 @@ def human_info_deep_copy(human_infos, human_info):
     human_info.human_state = reference_human_info.human_state # Action recognition result
     return human_info
 
+# draw face box
 def face_box_visualization(draw_frame, human_infos, flip_mode):
     for human_info in human_infos:
         if flip_mode:
