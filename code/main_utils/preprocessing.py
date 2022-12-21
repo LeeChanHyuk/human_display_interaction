@@ -1,5 +1,9 @@
 import numpy as np
 
+# Data processing is conducted by 3-steps
+# 1. Min-max normalization
+# 2. Sequence length is rearranged by 20 (for using input of already implemented network)
+# 3. Data differentiation (In sequence, every data is subtracted by first frame data)
 def data_preprocessing(data: np.array, fps) -> np.array:
     poses_from_one_video = data.astype(np.float)
     center_eyes = poses_from_one_video[0, :, :3]
@@ -8,7 +12,7 @@ def data_preprocessing(data: np.array, fps) -> np.array:
     right_shoulders = poses_from_one_video[3, :, :3]
     center_stomachs = poses_from_one_video[4, :, :3]
 
-    # transition normalization
+    # 1. Min-max normalization
     for i in range(center_eyes.shape[-1]):
         if i == 0:
             div_num = 640
@@ -30,12 +34,15 @@ def data_preprocessing(data: np.array, fps) -> np.array:
     #gaze_poses = poses_from_one_video[7]
     all_poses = np.concatenate([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses], axis=1) # (frames, values * 6)
     normalized_poses = []
+
+    # 2. sequence length normalization
     for i in range(all_poses.shape[-1]):
         i_all = all_poses[:,i]
         i_all = size_normalization(i_all, fps)
 
         normalized_poses.append(i_all)
     normalized_poses = np.array(normalized_poses).transpose()
+    # 3. Data differentiation
     normalized_poses = data_normalization(normalized_poses)
     return normalized_poses
 

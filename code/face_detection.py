@@ -20,7 +20,7 @@ def face_detection():
 	frame = np.ndarray(frame_shape, dtype=np.uint8, buffer=frame_shm.buf)
 	draw_frame = np.zeros((frame_shape), dtype=np.uint8)
 
-
+	# Face tracker initialization
 	model, dt, device = yolo_initialization(
 		frame_shape = (640, 640, 3),
 		weights= os.path.join(ROOT, 'estimators', 'face_detection_module', 'yolov5', 'weights', 'rgb_hue_strong.torchscript'),
@@ -29,6 +29,7 @@ def face_detection():
 
 	while 1:
 		start_time = time.time()
+		# Face detection
 		face_coordinates = yolo_face_detection( # 17ms ~ 21ms
 			im=frame, 
 			dt=dt, 
@@ -42,11 +43,3 @@ def face_detection():
 		# push the estimated face coordinates
 		for i in range(len(face_coordinates)):
 			face_coordinate_sh_array[i] = face_coordinates[i]
-		"""draw_frame[:,:,:] = frame[:,:,:]
-		for i in range(len(face_coordinates)):
-			x1, y1, x2, y2 = face_coordinates[0]
-			cv2.putText(draw_frame, "FPS:" + str(int(1/(time.time() - start_time))), (0, 100), cv2.FONT_HERSHEY_COMPLEX, 3, (0,0,255), 3)
-			cv2.rectangle(draw_frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 3)"""
-		#cv2.imshow("face detection", draw_frame)
-		#cv2.waitKey(1)
-		#print('Face detection fps is', str(1/(time.time() - start_time)))

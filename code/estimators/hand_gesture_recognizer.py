@@ -1,10 +1,3 @@
-"""
-Hand Tracking Module
-By: Murtaza Hassan
-Youtube: http://www.youtube.com/c/MurtazasWorkshopRoboticsandAI
-Website: https://www.computervision.zone
-"""
- 
 import cv2
 from matplotlib.axis import YAxis
 from matplotlib.pyplot import pink
@@ -59,6 +52,7 @@ class handDetector():
         self.vertical_flip_standby_tolerance = 20
         self.scale_to_standard = False
 
+        # time to event
         self.last_state_changed_time = float(time.time())
         self.vertical_flip_time = float(time.time())
         self.horizontal_flip_time = float(time.time())
@@ -67,6 +61,7 @@ class handDetector():
     
     ###################################### hand data manipulation #########################################
 
+    # For classifying almost hand states, the sequence of data are used
     def deque_initialization(self):
         for i in range(200):
             self.index_thumb_distance.append(1000)
@@ -81,6 +76,7 @@ class handDetector():
             self.two_hand_distance.append(0)
             self.finger_top_position.append([0, 0, 0])
     
+    # put the new data into the deque
     def put_info(self, data, sort):
         if sort == 'index_thumb_distance':
             val = self.index_thumb_distance.popleft()
@@ -118,6 +114,7 @@ class handDetector():
 
     ################################# hand detection ###############################
 
+    # find hand from the frame
     def findHands(self, img, draw=True):
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.hands.process(imgRGB)
@@ -130,6 +127,7 @@ class handDetector():
             self.find_hand = False
         return img
     
+    # find the key point positions of the detected hand
     def findPosition(self, img, handNo=0, draw=True):
         fingerPositionList = []
         if self.find_hand:
@@ -140,6 +138,7 @@ class handDetector():
                 fingerPositionList.append([id, cx, cy])
         return fingerPositionList
 
+    # deprecated function
     def find_main_user_hand_old(self, img, face_center, depth):
         main_user_finger_list = []
         finger_distance = []
@@ -183,6 +182,7 @@ class handDetector():
                 finger_center_position = [min(639,fingerPositionList[9][1]), min(639,fingerPositionList[9][2]), depth[min(639,fingerPositionList[9][2]), min(639,fingerPositionList[9][1])]]
                 distance = self.get_3d_distance(finger_center_position, face_center)
                 distance_last_hand = self.get_3d_distance(finger_center_position, self.last_hand_position)
+                # sometimes the face is classified with hand. So the distance can filter that.
                 if distance > 50:
                     main_user_finger_list.append(fingerPositionList)
                     finger_distance_with_face.append(distance)
@@ -219,6 +219,8 @@ class handDetector():
                 distance = self.get_3d_distance(finger_center_position, face_center)
                 distance_last_left_hand = self.get_3d_distance(finger_center_position, self.last_two_hand_position[0])
                 distance_last_right_hand = self.get_3d_distance(finger_center_position, self.last_two_hand_position[1])
+                
+                # sometimes the face is classified with hand. So the distance can filter that.
                 if distance > 50:
                     duplicate = False
                     if len(positions) > 0:
@@ -226,6 +228,7 @@ class handDetector():
                             temp_distance = self.get_distance([finger_center_position[0], finger_center_position[1]], [positions[i][0], positions[i][1]])
                             if temp_distance < 10:
                                 duplicate = True
+                    # sometimes the same hand can be detected twice in one frame. So this code can filter that.
                     if not duplicate:
                         main_user_finger_list.append(fingerPositionList)
                         finger_distance_with_face.append(distance)
@@ -233,7 +236,6 @@ class handDetector():
                         positions.append(finger_center_position)
 
             if len(finger_distance_with_last_two_hand) <= 1:
-                #print(positions)
                 return None, None, None, None
 
             min_distance = 100000
@@ -257,7 +259,6 @@ class handDetector():
                 else:
                     scores[0][left_main_hand_index] = 0
                     left_main_hand_index = scores[0].index(max(scores[0]))
-            #print(positions, left_main_hand_index, right_main_hand_index)
 
             # return main user left, right hands positions
             if len(main_user_finger_list) > 0:
@@ -278,10 +279,7 @@ class handDetector():
                     self.last_two_hand_position = [left_finger_center_position, right_finger_center_position]
                     return left_finger_list, right_finger_list, left_finger_center_position, right_finger_center_position
                 else:
-                    #print('y', y_distance_between_two_hand)
-                    #print("z", z_distance_between_two_hand)
                     return None, None, None, None
-                #print(scores[main_user_index], finger_distance_with_face[main_user_index], main_user_finger_list[main_user_index][9][2])
             else:
                 return None, None, None, None
         else:
@@ -291,6 +289,7 @@ class handDetector():
 
     ############################################### hand state analysis functions ###############################################
 
+    # deprecated function.
     def index_finger_grab(self, finger_position_list):
         index_finger_vec1 = [finger_position_list[6][1] - finger_position_list[5][1], finger_position_list[6][2] - finger_position_list[5][2]]
         index_finger_vec2 = [finger_position_list[8][1] - finger_position_list[7][1], finger_position_list[8][2] - finger_position_list[7][2]]
@@ -309,6 +308,7 @@ class handDetector():
         else:
             return False
 
+    # classify the direction of finger
     def fingersUp(self, finger_list, direction):
         fingers = []
         # up, right, down, left
@@ -362,6 +362,7 @@ class handDetector():
                     fingers.append(0)
         return fingers
 
+    # classify the state of hand is spread (= outstretched)
     def handSpread(self, finger_list, direction):
         spread_hands_bool = False
         fingers = self.fingersUp(finger_list, direction)
@@ -369,6 +370,7 @@ class handDetector():
             spread_hands_bool = True
         return spread_hands_bool
 
+    # classify whether this finger is grabbing or not
     def fingerGrab(self, finger_lists, index, direction):
         # middle
         distance_1 = self.get_distance(finger_lists[index], finger_lists[index+1])
@@ -393,6 +395,7 @@ class handDetector():
         else:
             return False
 
+    # classify the hand is grabbing (for using fingerGrab function)
     def handGrab(self, finger_lists, direction):
         index_grab = self.fingerGrab(finger_lists, 5, direction)
         middle_grab = self.fingerGrab(finger_lists, 9, direction)
@@ -403,6 +406,7 @@ class handDetector():
         else:
             return False
 
+    # deprecated function
     def hand_fist(self, finger_position_list, hand_center_position):
         finger_x_list = [finger_position_list[2][1], finger_position_list[3][1], finger_position_list[4][1], \
             finger_position_list[6][1], finger_position_list[7][1], finger_position_list[8][1], \
@@ -433,6 +437,7 @@ class handDetector():
         else:
             return False, var_mean
     
+    # classify the hand state is fist (for using variance of finger lists)
     def new_hand_fist(self, finger_position_list, hand_center_position):
         if hand_center_position[2] != 0:
             self.last_hand_position = hand_center_position
@@ -463,6 +468,7 @@ class handDetector():
         else:
             return False, area
 
+    # classify the direction of hand
     def hand_up(self, finger_position_list, direction):
         success = True
         if direction == 'up':
@@ -483,6 +489,7 @@ class handDetector():
                     success = False
         return success
 
+    # calculate the translation factor for comparing original hand position (= initial state) and current position
     def translation_factor_calculation(self, hand_center_position, scale_ratio = 0.2):
         if hand_center_position[2] == 0:
             hand_center_position[2] = self.last_hand_position[2]
@@ -500,6 +507,7 @@ class handDetector():
         diff = [position_x_diff * scale_ratio, position_y_diff * scale_ratio, 0 * scale_ratio]
         return diff
 
+    # calculate the rotation factor for comparing original hand position (= initial state) and current position
     def rotation_factor_calculation(self, hand_center_position, scale_ratio = 0.15):
         if hand_center_position[2] == 0:
             hand_center_position[2] = self.last_hand_position[2]
@@ -509,6 +517,7 @@ class handDetector():
         position_diff = self.get_3d_x_diff(start_angle, end_angle, self.spread_start_value[2], hand_center_position[2])
         return position_diff * scale_ratio
 
+    # deprecated function.
     def scale_factor_calculation(self, scale_ratio = 1.0):
         diff = self.scale_start_value - self.index_thumb_distance[-1]
         # scaling down
@@ -519,6 +528,7 @@ class handDetector():
             scaling_factor = - (scale_ratio * (diff / 20.0))
         return scaling_factor
 
+    # calculate the scale factor for using left and right hands position.
     def two_hand_scale_factor_calculation(self, distance_between_two_hand_xz, scale_ratio = 1.0):
         diff = distance_between_two_hand_xz - self.scale_start_value
         scaling_factor = scale_ratio * (diff / 10.0)
@@ -528,28 +538,37 @@ class handDetector():
 
     ####################################### hand motion classification #########################################
 
+    # classify whether the two hand of main user is scaling with specified motion
     def scale_manipulation_new(self, fps, left_finger_position_list, right_finger_position_list, left_hand_center_position, right_hand_center_position, depth, state):
         fps = int(fps)
         left_finger_center_position = [min(639,left_finger_position_list[9][1]), min(639,left_finger_position_list[9][2]), depth[min(639,left_finger_position_list[9][2]), min(639,left_finger_position_list[9][1])]]
         right_finger_center_position = [min(639,right_finger_position_list[9][1]), min(639,right_finger_position_list[9][2]), depth[min(639,right_finger_position_list[9][2]), min(639,right_finger_position_list[9][1])]]
         left_hand_grab, area = self.new_hand_fist(left_finger_position_list, left_hand_center_position)
         right_hand_grab, area = self.new_hand_fist(right_finger_position_list, right_finger_center_position)
+
+        # if the two hand of main user is not grabbing
         if left_hand_grab is False or right_hand_grab is False:
+            # calculate the distance between two hand on x-z plane
             distance_between_two_hand_xz = self.get_distance(left_finger_center_position[:2], right_finger_center_position[:2])
+            # put the calculated value into the deque
             self.put_info(True, 'two_hand_correlated_bool')
             self.put_info(distance_between_two_hand_xz, 'two_hand_distance')
             stopping = False
+            # if the current state (this value is filtered state by user state analysis function) is not scaling
             if state != 'scaling':
                 two_hand = True
+                # check the two hand correlation for the 1 second.
                 for i in range(fps):
                     if self.two_hand_correlated_bool[-1-i] == False:
                         two_hand = False
+                # if the two hand is correctly correlated and the auto stopping time is over than 1.5 seconds.
                 if two_hand and float(time.time()) - self.stopping_time > 1.5:
                     distances = list(itertools.islice(self.two_hand_distance, len(self.two_hand_distance)-fps, len(self.two_hand_distance), 1))
                     distance_mean = np.mean(distances)
                     self.state = 'scaling'
                     self.scale_start_value = distance_mean
                     self.last_state_changed_time = float(time.time())
+            # in scaling state, the variance of the two hand is not changed for 1 sec, the scaling state is stopped.
             elif state == 'scaling':
                 distances = list(itertools.islice(self.two_hand_distance, len(self.two_hand_distance)-fps, len(self.two_hand_distance), 1))
                 diff_list = list(distances - np.mean(distances))
@@ -557,14 +576,16 @@ class handDetector():
                 diff_var = np.var(diff_list)
                 if diff_var < 200:
                     stopping = True
+            # if the stopping operation is true and the classified stop event is occurred after than last state change.
             if stopping and float(time.time()) - self.last_state_changed_time > 1.5:
                 self.state = 'standard'
             # Check the tolerance of scaling motion miss
                 if stopping:
                     self.stopping_time = float(time.time())
+            # if the stopping operation is false
             elif state == 'scaling':
+                # calculate the scaling factor
                 scaling_factor = self.two_hand_scale_factor_calculation(distance_between_two_hand_xz, scale_ratio = 5.0)
-                print(self.scaling_factor[-1], scaling_factor)
                 self.put_info(scaling_factor, 'scaling_factor')
             if state == 'scaling' and self.state == 'standard':
                 self.scale_to_standard = True
@@ -575,7 +596,7 @@ class handDetector():
             print(left_hand_grab, right_hand_grab)
             self.state = 'standard'
 
-
+    # deprecated function
     def scale_manipulation(self, fps, finger_position_list):
         fps = int(fps)
         spread_hand_bool = self.handSpread(finger_position_list, direction='up')
@@ -624,6 +645,7 @@ class handDetector():
                 self.put_info(scaling_factor, 'scaling_factor')
         return spread_hand_bool, index_finger_grab
 
+    # estimate the hand state for analyzing several hand motion (this is the preprocessing step)
     def hand_state_estimation(self, fps, finger_position_list):
         fps = int(fps)
         spread_hand_bool = self.handSpread(finger_position_list, direction='up')
@@ -634,13 +656,16 @@ class handDetector():
         # Put the info into the detector deques
         self.put_info(spread_hand_bool, 'hand_spread_bool')
 
+    # classifying the hand shake motion
     def hand_shake_estimation(self, fps, finger_position_list, depth):
         finger_top_median = []
+        # calculate the top-centered position of the hand for using several finger positions.
         for i in range(1, 3):
             temp_finger_top = np.median([finger_position_list[4][i], finger_position_list[8][i], finger_position_list[12][i], finger_position_list[16][i], finger_position_list[20][i]])
             finger_top_median.append(temp_finger_top)
         finger_top_median.append(int(depth[min(639,int(finger_top_median[1])), min(639,int(finger_top_median[0]))]))
         self.put_info(finger_top_median, 'finger_top_position')
+        # if the hand is correctly spreaded
         if self.hand_up_state and self.hand_grab_bool[-1] == False and self.hand_spread_bool[-1]:
             fingers_top = list(itertools.islice(self.finger_top_position, len(self.finger_top_position)-fps, len(self.finger_top_position), 1))
             if len(fingers_top) == 0:
@@ -655,6 +680,7 @@ class handDetector():
             left_tolerance = 0
             right_tolerance = 0
             state_change_num = 0
+            # classify the shake motion is occurred over than 5 times.
             while start_index < len(fingers_top):
                 if fingers_top[start_index][0] - fingers_top[start_index-1][0] > 5:
                     if state == None:
@@ -686,6 +712,7 @@ class handDetector():
             if self.state == 'hand_shake':
                 self.state = 'standard'
 
+    # classifying the translation motion
     def translation_manipulation(self, hand_center_position, finger_position_list, fps):
         fps = int(fps)
         if self.state != 'translating':
@@ -709,6 +736,7 @@ class handDetector():
             if self.hand_grab_bool[-1] == False or self.hand_up_state == False:
                 self.state = 'standard'
     
+    # classifying the rotation motion
     def rotation_manipulation(self, hand_center_position, fps):
         fps = int(fps)
         if self.state != 'rotating':
@@ -743,6 +771,7 @@ class handDetector():
             if self.hand_spread_bool[-1] == False or self.hand_grab_bool[-1] is True or self.hand_up_state is False:
                 self.state = 'standard'
 
+    # not correctly implemented function
     def horizontal_hand_flip_manipulation(self, fps, finger_position_list):
         flip_standby = self.handSpread(finger_position_list, direction='left') and self.hand_up(finger_position_list, direction = 'left')
         if flip_standby:
@@ -765,6 +794,7 @@ class handDetector():
             self.state = 'standard'
         return False
 
+    # not correctly implemented function
     def vertical_hand_flip_manipulation(self, fps, finger_position_list):
         flip_standby = self.handSpread(finger_position_list, direction='down') and self.hand_up(finger_position_list, direction = 'down')
         if flip_standby:
@@ -790,6 +820,7 @@ class handDetector():
                 
 	######################################################## Utils ######################################################
 
+    # get 2D distance between two point
     def get_distance(self, p1, p2):
         if type(p1) == list:
             if len(p1) == 3:
@@ -803,32 +834,38 @@ class handDetector():
             length = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
         return length
 
+    # get 3D distance between two point
     def get_3d_distance(self, p1, p2):
         length = math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2 + (p1[2] - p2[2]) ** 2)
         return length
 
+    # get 3D angle on x-plane between two points for using camera FOV
     def get_3d_x_angle(self, position, img_w, camera_angle):
         center_w = int(img_w // 2)
         diff_x = position - center_w
         angle = camera_angle * (diff_x / center_w)
         return angle
     
+    # get 3D angle on x-plane between two angles
     def get_3d_x_diff(self, angle_1, angle_2, depth_1, depth_2):
         x_1 = math.sin(math.radians(angle_1)) * depth_1
         x_2 = math.sin(math.radians(angle_2)) * depth_2
         return x_2 - x_1
 
+    # get 3D angle on y-plane between two points for using camera FOV
     def get_3d_y_angle(self, position, img_h, camera_angle):
         center_h = int(img_h // 2)
         diff_h = position - center_h
         angle = camera_angle * (diff_h / center_h)
         return angle
     
+    # get 3D angle on y-plane between two points for using camera FOV
     def get_3d_y_diff(self, angle_1, angle_2, depth_1, depth_2):
         y_1 = math.sin(math.radians(angle_1)) * depth_1
         y_2 = math.sin(math.radians(angle_2)) * depth_2
         return y_1 - y_2
     
+    # get mean value of the lists
     def mean(self, lists):
         sum_num = 0
         if len(lists):

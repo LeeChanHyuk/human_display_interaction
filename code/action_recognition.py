@@ -69,10 +69,17 @@ def action_recognition():
 	while 1:
 		start_time = time.time()
 		draw_frame[:] = frame[:]
+
+		# Save current face box for preventing situations in which variables change
 		main_user_info.face_box[:] = main_user_face_coordinate_sh_array[0][:]
 		main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
+
+		# face center coordinate calibration
 		calibration(main_user_info, True)
+
+		# save the calib face center coordinates
 		main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
+
 		if network_sh_array[:] > 1:
 			main_user_info._put_data(body_coordinates_sh_array[1], 'center_mouths')
 			main_user_info._put_data(body_coordinates_sh_array[2], 'left_shoulders')
@@ -82,11 +89,19 @@ def action_recognition():
 			main_user_info._put_data(body_pose_sh_array[:], 'body_poses')
 		
 		if network_sh_array[:] > 2:
+			# action recognition
 			action_recognition_func(main_user_info)
+
+			# save the result of action recognition
 			action_sh_array[:] = main_user_info.human_state
+
+			# visualize the action into the showing frame
 			cv2.putText(draw_frame, main_user_info.human_state, (0, 50), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
+
+		# visualize the human infos into the showing frame
 		draw_frame = visualization(draw_frame, main_user_info, network_sh_array[:], False)
+
+		# show the frame
 		cv2.imshow('draw_frame', draw_frame)
 		cv2.waitKey(1)
-		#print('Action recognition estimation fps is', str(1/(time.time() - start_time)))
 		

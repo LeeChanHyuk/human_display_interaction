@@ -72,10 +72,13 @@ def new_pose_calculator(left_shoulder, right_shoulder, center_stomach):
         roll = -theta
     return yaw, pitch, roll
 
-
+# body pose is calculated by two vector (basis vector on body and vector calculated by two key points)
+# the inner angle between two vector is calculated by below equation.
+# arccos(v1*v2 / ||v1|| * ||v2||)
 def upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach):
     center_shoulder = (left_shoulder + right_shoulder) / 2
     yaw, pitch, roll = 0, 0, 0
+
     # Yaw
     if left_shoulder[2] > right_shoulder[2]: # yaw (-) direction
         direction_vector = (left_shoulder - center_shoulder)
@@ -91,6 +94,7 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach):
         theta = (direction_vector[0]*pivot_vector[1] - direction_vector[1] * pivot_vector[0]) / ((math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)) * (math.sqrt(pivot_vector[0] ** 2 + pivot_vector[1] ** 2)))
         theta = math.asin(theta)
         yaw = theta
+
     # Pitch
     if center_shoulder[2] < center_stomach[2]: # pitch (-) direction
         direction_vector = (center_shoulder - center_stomach)
@@ -106,21 +110,6 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach):
         theta = (direction_vector[0]*pivot_vector[1] - direction_vector[1] * pivot_vector[0]) / ((math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)) * (math.sqrt(pivot_vector[0] ** 2 + pivot_vector[1] ** 2)))
         theta = math.asin(theta)
         pitch = (theta * -1)
-    """# Roll
-    if center_shoulder[2] < center_stomach[2]: # pitch (-) direction
-        direction_vector = (center_shoulder - center_stomach)
-        direction_vector = (direction_vector[0], direction_vector[1])
-        pivot_vector = [0, 1]
-        theta = (direction_vector[0]*pivot_vector[1] - direction_vector[1] * pivot_vector[0]) / ((math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)) * (math.sqrt(pivot_vector[0] ** 2 + pivot_vector[1] ** 2)))
-        theta = math.asin(theta)
-        roll = (theta * -1)
-    else:
-        direction_vector = (center_shoulder - center_stomach)
-        direction_vector = (direction_vector[0], direction_vector[1])
-        pivot_vector = [0, 1]
-        theta = (direction_vector[0]*pivot_vector[1] - direction_vector[1] * pivot_vector[0]) / ((math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)) * (math.sqrt(pivot_vector[0] ** 2 + pivot_vector[1] ** 2)))
-        theta = math.asin(theta)
-        roll = theta"""
 
     if left_shoulder[1] < right_shoulder[1]: # roll+
         direction_vector = (left_shoulder - center_shoulder)
@@ -135,8 +124,6 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach):
         theta = math.asin(theta)
         roll = theta
     return yaw, pitch, roll
-
-
 
 def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height):
 
@@ -196,18 +183,30 @@ def body_pose_estimation_func(pose, frame, depth):
     body_poses = []
     body_coordinates = []
     height, width = frame.shape[:2]
+
+    # Estimate body key point from input frame
     results = pose.process(frame)
+
+    # if there is body key point
     if results.pose_landmarks:
         body_landmarks= results.pose_landmarks
+
+        # Convert the estimated result to the frame domain
         body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
             for lmk in body_landmarks.landmark], dtype=np.float32)
 
+        # Extract necessary key points from the result of media pipe - pose module
         left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye3 = body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height)
-        #draw_frame = visualization_tool.draw_body_keypoints(draw_frame, [left_shoulder, right_shoulder, center_stomach, center_mouth, center_eye3], flip_mode)
+
+        # Calculate the body pose from the extracted body key points
         upper_body_yaw, upper_body_pitch, upper_body_roll = upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
+
+        # Radian -> degree
         upper_body_yaw = upper_body_yaw * 180 / math.pi
         upper_body_pitch = upper_body_pitch * 180 / math.pi
         upper_body_roll = upper_body_roll * 180 / math.pi
+
+        # Save the result
         body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
         body_coordinates.append([center_eye3, center_mouth, left_shoulder, right_shoulder, center_stomach])
 

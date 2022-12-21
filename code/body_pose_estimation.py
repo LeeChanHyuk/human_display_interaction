@@ -36,14 +36,20 @@ def body_pose_estimation():
 	network_shm = shared_memory.SharedMemory(name = 'networking')
 	network_sh_array = np.ndarray(network_shape, dtype=np.uint8, buffer=network_shm.buf)
 
+	# media pipe body key point estimation
 	with mp_pose.Pose(
 		min_detection_confidence=0.5,
 		min_tracking_confidence=0.5,
 		model_complexity=1) as pose:
 		while 1:
+			# if this is not action recognition mode
 			if network_sh_array[:] < 3:
 				continue
+
+			# body pose estimation
 			body_poses, body_coordinates = body_pose_estimation_func(pose, frame, depth)
+
+			# save the result 
 			body_pose_sh_array[:] = body_pose_size_array[:]
 			body_pose_sh_array[:] = body_poses[:]
 			body_coordinates_sh_array[:] = body_coordinates_size_array[:]
