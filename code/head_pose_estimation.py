@@ -106,10 +106,26 @@ def head_pose_estimation():
 			face_center_z = depth[face_center_y, face_center_x]
 			face_center_coordinates.append([face_center_x, face_center_y, face_center_z])
 		# if only face detection
-		if network_sh_array < 2:
+		if network_sh_array < 2 or (network_sh_array > 3 and network_sh_array < 6):
 			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_sh_array[0][:]
 			if len(face_center_coordinates) > 0:
 				main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[0][:]
+				main_user_info.face_box[:] = main_user_face_box_coordinate_sh_array[0][:]
+				main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
+
+				# calibrate the face center coordinate with camera
+				calibration(main_user_info, True)
+
+				# save the result of calibration
+				main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
+
+				# show the result image
+				draw_frame[:] = frame[:]
+				cv2.rectangle(draw_frame, (face_coordinate_array[main_user_index][0], face_coordinate_array[main_user_index][1]),
+				(face_coordinate_array[main_user_index][2], face_coordinate_array[main_user_index][3]), (255, 0, 0), 3)
+				flip_val = 1
+				cv2.imshow('draw_frame', draw_frame)
+				cv2.waitKey(1)
 			continue
 		draw_frame[:] = frame[:]
 
@@ -148,7 +164,7 @@ def head_pose_estimation():
 			main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[main_user_index][:]
 
 		# if the action recognition process is not used in this mode
-		if network_sh_array < 3 or network_sh_array == 4:
+		if network_sh_array != 3 and network_sh_array != 7:
 			main_user_info.face_box[:] = main_user_face_box_coordinate_sh_array[0][:]
 			main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
 

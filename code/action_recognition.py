@@ -80,7 +80,7 @@ def action_recognition():
 		# save the calib face center coordinates
 		main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
 
-		if network_sh_array[:] > 1:
+		if network_sh_array != 3 and network_sh_array != 7:
 			main_user_info._put_data(body_coordinates_sh_array[1], 'center_mouths')
 			main_user_info._put_data(body_coordinates_sh_array[2], 'left_shoulders')
 			main_user_info._put_data(body_coordinates_sh_array[3], 'right_shoulders')
@@ -88,7 +88,6 @@ def action_recognition():
 			main_user_info._put_data([head_pose_sh_array[1], head_pose_sh_array[0], head_pose_sh_array[2]], 'head_poses')
 			main_user_info._put_data(body_pose_sh_array[:], 'body_poses')
 		
-		if network_sh_array[:] > 2:
 			# action recognition
 			action_recognition_func(main_user_info)
 

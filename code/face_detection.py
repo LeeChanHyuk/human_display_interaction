@@ -20,6 +20,12 @@ def face_detection():
 	frame = np.ndarray(frame_shape, dtype=np.uint8, buffer=frame_shm.buf)
 	draw_frame = np.zeros((frame_shape), dtype=np.uint8)
 
+	# network shm
+	network_shape = (1)
+	size_array = np.zeros(network_shape, dtype=np.uint8)
+	network_shm = shared_memory.SharedMemory(name = 'networking')
+	network_sh_array = np.ndarray(network_shape, dtype=np.uint8, buffer=network_shm.buf)
+
 	# Face tracker initialization
 	model, dt, device = yolo_initialization(
 		frame_shape = (640, 640, 3),
@@ -29,17 +35,19 @@ def face_detection():
 
 	while 1:
 		start_time = time.time()
-		# Face detection
-		face_coordinates = yolo_face_detection( # 17ms ~ 21ms
-			im=frame, 
-			dt=dt, 
-			device = device, 
-			model = model, 
-			frame_shape = (640, 640, 3))
+		if network_sh_array != 0 and network_sh_array != 4:
 
-		# push the zero array into the shm array
-		face_coordinate_sh_array[:] = size_array[:]
+			# Face detection
+			face_coordinates = yolo_face_detection( # 17ms ~ 21ms
+				im=frame, 
+				dt=dt, 
+				device = device, 
+				model = model, 
+				frame_shape = (640, 640, 3))
 
-		# push the estimated face coordinates
-		for i in range(len(face_coordinates)):
-			face_coordinate_sh_array[i] = face_coordinates[i]
+			# push the zero array into the shm array
+			face_coordinate_sh_array[:] = size_array[:]
+
+			# push the estimated face coordinates
+			for i in range(len(face_coordinates)):
+				face_coordinate_sh_array[i] = face_coordinates[i]

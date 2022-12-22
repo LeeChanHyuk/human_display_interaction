@@ -77,7 +77,14 @@ def router_function():
         elif message == '3':
             send_message = 'A' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + action_info
         elif message == '4':
-            send_message = 'H' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + hand_info + ' ' + hand_val
+            send_message = 'H' + ' ' + hand_info + ' ' + hand_val
+        elif message == '5':
+            send_message = 'C' + ' ' + face_center_info + ' ' + hand_info + ' ' + hand_val
+        elif message == '6':
+            send_message = 'S' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + hand_info + ' ' + hand_val
+        elif message == '7':
+            send_message = 'L' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + action_info + ' ' + hand_info + ' ' + hand_val
+
         to_renderer.send_string(send_message)
         """tmes = time.time() - start_time
         if tmes == 0:

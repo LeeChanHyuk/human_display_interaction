@@ -43,7 +43,7 @@ def body_pose_estimation():
 		model_complexity=1) as pose:
 		while 1:
 			# if this is not action recognition mode
-			if network_sh_array[:] < 3:
+			if network_sh_array != 3 and network_sh_array != 7:
 				continue
 
 			# body pose estimation
