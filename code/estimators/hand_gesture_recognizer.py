@@ -667,11 +667,14 @@ class handDetector():
         self.put_info(finger_top_median, 'finger_top_position')
         # if the hand is correctly spreaded
         if self.hand_up_state and self.hand_grab_bool[-1] == False and self.hand_spread_bool[-1]:
+            # deque -> list
             fingers_top = list(itertools.islice(self.finger_top_position, len(self.finger_top_position)-fps, len(self.finger_top_position), 1))
             if len(fingers_top) == 0:
                 return
             sequence_median_val = np.median(fingers_top)
+            # this diff is about the minimum and maximum val in one sequence (1 seceond sequence)
             sequence_diff = np.max(fingers_top[:][0]) - np.min(fingers_top[:][0])
+            # if the hand shake motion is occurred correctly, the diff is bigger than 50mm in 1 second
             if sequence_diff < 50:
                 return
             directions = [0, 0, 0, 0]
@@ -682,6 +685,7 @@ class handDetector():
             state_change_num = 0
             # classify the shake motion is occurred over than 5 times.
             while start_index < len(fingers_top):
+                # the tolerance of left and right is the filtering variable for classifying motion stably.
                 if fingers_top[start_index][0] - fingers_top[start_index-1][0] > 5:
                     if state == None:
                         state = 'right'
@@ -703,6 +707,7 @@ class handDetector():
                         state = 'left'
                         left_tolerance = 0
                 start_index += 1 
+            # if the motion was changed the direction in few sequences
             if state_change_num > 5:
                 self.state = 'hand_shake'
                 print(state_change_num)
@@ -715,9 +720,12 @@ class handDetector():
     # classifying the translation motion
     def translation_manipulation(self, hand_center_position, finger_position_list, fps):
         fps = int(fps)
+        # if the detector does not classify that the current state is equal translating
         if self.state != 'translating':
+            # tolerance is used for filtering
             self.tolerance = fps
             spread = False
+            # if the hand is grabbing (of course, the fist and grab is not equal each other) and not spreading
             for i in range(fps):
                 if self.hand_spread_bool[-1-i] == True:
                     spread = True
@@ -730,6 +738,7 @@ class handDetector():
                 self.state = 'translating'
                 self.grab_start_value = hand_center_position
                 self.last_state_changed_time = float(time.time())
+        # if the result of the hand gesture estimation is translating
         elif self.state == 'translating':
             translating_factor = self.translation_factor_calculation(hand_center_position, scale_ratio=0.5)
             self.put_info(translating_factor, 'translating_factor')
@@ -740,6 +749,7 @@ class handDetector():
     def rotation_manipulation(self, hand_center_position, fps):
         fps = int(fps)
         if self.state != 'rotating':
+            # tolerance is used for filtering
             self.tolerance = fps
             spread = True
             for i in range(fps):
@@ -749,6 +759,7 @@ class handDetector():
             for i in range(fps):
                 if self.hand_grab_bool[-1-i] == True:
                     grab = True
+            # if the hand is spreading
             if grab is False and spread and self.hand_up_state and float(time.time()) - self.stopping_time > 1.5:
                 #print('previous state is', self.state)
                 self.state = 'rotating'
@@ -757,17 +768,6 @@ class handDetector():
         elif self.state == 'rotating':
             rotation_factor = self.rotation_factor_calculation(hand_center_position, scale_ratio=0.15)
             self.put_info(rotation_factor, 'rotating_factor')
-            """
-            if self.hand_spread_bool[-1] == False or self.hand_grab_bool[-1] is True or self.hand_up_state is False:
-                self.rotating_tolerance -= 1
-            else:
-                self.rotating_tolerance = min(self.rotating_tolerance + 1, fps)
-            if self.rotating_tolerance <= 0:
-                self.state = 'standard'
-                self.rotating_tolerance = int(fps)
-            else:
-                self.last_state_changed_time = float(time.time())
-            """
             if self.hand_spread_bool[-1] == False or self.hand_grab_bool[-1] is True or self.hand_up_state is False:
                 self.state = 'standard'
 
