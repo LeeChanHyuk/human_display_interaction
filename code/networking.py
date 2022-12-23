@@ -8,7 +8,7 @@ from multiprocessing import shared_memory
 def router_function():
     context2 = zmq.Context()
     to_renderer = context2.socket(zmq.REP)
-    to_renderer.bind("tcp://*:5558")
+    to_renderer.bind("tcp://*:5556")
 
 	# face coordinate shared memory
     main_user_face_box_coordinate_shape = (1, 4) # for 20 peoples

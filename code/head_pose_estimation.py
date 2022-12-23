@@ -105,6 +105,7 @@ def head_pose_estimation():
 			face_center_y = min(max(0, face_center_y), 639)
 			face_center_z = depth[face_center_y, face_center_x]
 			face_center_coordinates.append([face_center_x, face_center_y, face_center_z])
+
 		# if only face detection
 		if network_sh_array < 2 or (network_sh_array > 3 and network_sh_array < 6):
 			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_sh_array[0][:]
@@ -112,6 +113,14 @@ def head_pose_estimation():
 				main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[0][:]
 				main_user_info.face_box[:] = main_user_face_box_coordinate_sh_array[0][:]
 				main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
+
+				# Main user classification (Main user classification requires face coordinates and head poses)
+				main_user_index = main_user_classification(face_center_coordinates, use_head_pose=False)
+
+				# Filter the result of main user classification for stabilizing the result of classification
+				main_user_index, tolerance = main_user_classification_filter(tolerance, previous_main_user_position, face_center_coordinates[main_user_index], main_user_index, face_center_coordinates, fps)
+
+				previous_main_user_position = face_center_coordinates[main_user_index]
 
 				# calibrate the face center coordinate with camera
 				calibration(main_user_info, True)
