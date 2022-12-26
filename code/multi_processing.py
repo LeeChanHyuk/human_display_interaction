@@ -86,6 +86,9 @@ if __name__ == "__main__":
 	hand_val_sh_array = np.ndarray(hand_val_shape, dtype=np.int64, buffer=hand_val_shm.buf)
 	hand_val_sh_array[:] = [0, 0, 0]
 
+	# multi renderer communication
+	port_numbers = [5551, 5552]
+
 	#################### Multi processing #########################
 
 	p1 = Process(target=get_input_from_cam)
@@ -93,7 +96,9 @@ if __name__ == "__main__":
 	p3 = Process(target=head_pose_estimation)
 	#p4 = Process(target=body_pose_estimation)
 	#p5 = Process(target=action_recognition)
-	p6 = Process(target=router_function)
+	for port_number in port_numbers:
+		p6 = Process(target=router_function, args=(port_number,))
+		p6.start()
 	p7 = Process(target=hand_gesture_recognition)
 	p1.start()
 	print('p1 start')
@@ -105,7 +110,7 @@ if __name__ == "__main__":
 	#print('p4 start')
 	#p5.start()
 	#print('p5 start')
-	p6.start()
+	#p6.start()
 	print('p6 start')
 	p7.start()
 	print('p7 start')

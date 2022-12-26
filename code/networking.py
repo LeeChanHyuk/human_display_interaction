@@ -5,10 +5,11 @@ import numpy as np
 from multiprocessing import shared_memory
 
 
-def router_function():
+def router_function(port_number):
     context2 = zmq.Context()
     to_renderer = context2.socket(zmq.REP)
-    to_renderer.bind("tcp://*:5556")
+    port_address = "tcp://*:" + str(port_number)
+    to_renderer.bind(port_address)
 
 	# face coordinate shared memory
     main_user_face_box_coordinate_shape = (1, 4) # for 20 peoples
