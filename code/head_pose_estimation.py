@@ -6,7 +6,7 @@ from multiprocessing import shared_memory
 from estimators.face_detection_module.yolov5.detect import main
 
 import estimators.head_pose_estimation_module.service as service
-from estimators.main_user_classifier import main_user_classification, main_user_classification_filter
+from estimators.main_user_classifier import main_user_classification, main_user_classification_filter, main_display_classification
 from user_information.human import HumanInfo
 from estimators.calibrator import calibration
 from total_visualization import draw_axis
@@ -29,7 +29,7 @@ def head_pose_estimation_func(frame, face_boxes, fa, handler):
 	# Return head poses
 	return head_poses
 
-def head_pose_estimation():
+def head_pose_estimation(display_positions):
 	ROOT = os.path.dirname(os.path.abspath(__file__))
 
 	######################## Input ############################
@@ -51,6 +51,12 @@ def head_pose_estimation():
 	face_coordinate_shm = shared_memory.SharedMemory(name = 'face_box_coordinate')
 	face_coordinate_sh_array = np.ndarray(face_coordinate_shape, dtype=np.int64, buffer=face_coordinate_shm.buf)
 	face_coordinate_array = np.ndarray(face_coordinate_shape, dtype=np.int64)
+
+    # head pose shm
+	head_pose_shape = (3)
+	size_array = np.zeros(head_pose_shape, dtype=np.int64)
+	head_pose_shm = shared_memory.SharedMemory(name = 'head_pose')
+	head_pose_sh_array = np.ndarray(head_pose_shape, dtype=np.int64, buffer=head_pose_shm.buf)
 
 	# face box coordinate shared memory
 	main_user_face_box_coordinate_shape = (1, 4) # for 20 peoples
@@ -74,16 +80,18 @@ def head_pose_estimation():
 	network_shm = shared_memory.SharedMemory(name = 'networking')
 	network_sh_array = np.ndarray(network_shape, dtype=np.uint8, buffer=network_shm.buf)
 
+    # main_display_port
+	main_display_port_shape = (1)
+	size_array = np.zeros(main_display_port_shape, dtype=np.int64)
+	main_display_port_shm = shared_memory.SharedMemory(name = 'main_display_port')
+	main_display_port_sh_array = np.ndarray(main_display_port_shape, dtype=np.int64, buffer=main_display_port_shm.buf)
+
 	######################## Output ###########################
 	
-    # head pose shm
-	head_pose_shape = (3)
-	size_array = np.zeros(head_pose_shape, dtype=np.int64)
-	head_pose_shm = shared_memory.SharedMemory(name = 'head_pose')
-	head_pose_sh_array = np.ndarray(head_pose_shape, dtype=np.int64, buffer=head_pose_shm.buf)
 
 	# Initialize face detection module
 	fa = service.DepthFacialLandmarks(os.path.join(ROOT, "estimators/head_pose_estimation_module/weights/sparse_face.tflite"))
+	fps = 20
 	handler = getattr(service, 'pose')
 	previous_length = 0
 	previous_main_user_position = [0, 0, 0]
@@ -151,6 +159,10 @@ def head_pose_estimation():
 			# Filter the result of main user classification for stabilizing the result of classification
 			main_user_index, tolerance = main_user_classification_filter(tolerance, previous_main_user_position, face_center_coordinates[main_user_index], main_user_index, face_center_coordinates, fps)
 
+			# classify which display is main display with main user
+			main_display_index = main_display_classification(face_center_coordinates[main_user_index], display_positions, head_poses[main_user_index])
+			#print(main_display_index)
+
 			# save the face center coordinate for using comparison between previous and current main user index
 			previous_main_user_position = face_center_coordinates[main_user_index]
 
@@ -159,6 +171,9 @@ def head_pose_estimation():
 
 			# store the result into the shared memory
 			main_user_face_box_coordinate_sh_array[0][:] = face_coordinate_array[main_user_index][:]
+
+			# store the result of main display
+			main_display_port_sh_array[:] = main_display_index
 
 			# Draw the result of main user face box
 			cv2.rectangle(draw_frame, (face_coordinate_array[main_user_index][0], face_coordinate_array[main_user_index][1]),

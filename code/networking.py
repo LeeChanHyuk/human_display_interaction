@@ -5,7 +5,8 @@ import numpy as np
 from multiprocessing import shared_memory
 
 
-def router_function(port_number):
+def router_function(port_info):
+    port_number, port_sort = port_info
     context2 = zmq.Context()
     to_renderer = context2.socket(zmq.REP)
     port_address = "tcp://*:" + str(port_number)
@@ -56,6 +57,11 @@ def router_function(port_number):
     network_shm = shared_memory.SharedMemory(name = 'networking')
     network_sh_array = np.ndarray(network_shape, dtype=np.uint8, buffer=network_shm.buf)
 
+    # main_display_index
+    main_display_shape = (1)
+    main_display_shm = shared_memory.SharedMemory(name = 'main_display_port')
+    main_display_sh_array = np.ndarray(main_display_shape, dtype=np.int64, buffer=main_display_shm.buf)
+
     while True:
         start_time = time.time()
         message = to_renderer.recv()
@@ -69,22 +75,28 @@ def router_function(port_number):
         hand_info = str(hand_gesture_sh_array[0])
         hand_info = hand_info[2:len(hand_info)-1]
         hand_val = str(hand_val_sh_array[0]) + ' ' + str(hand_val_sh_array[1]) + ' ' + str(hand_val_sh_array[2])
+        main_display = '1'
+        if port_sort.index(port_number) != main_display_sh_array[0]:
+            action_info = 'standard'
+            hand_info = 'standard'
+            hand_val = '0 0 0'
+            main_display = '0'
         if message == '0':
             send_message = 'N'
         elif message == '1':
-            send_message = 'D' + ' ' + face_center_info
+            send_message = 'D' + ' ' + face_center_info + ' ' + main_display
         elif message == '2':
-            send_message = 'E' + ' ' + face_center_info + ' ' + head_pose_info
+            send_message = 'E' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + main_display
         elif message == '3':
-            send_message = 'A' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + action_info
+            send_message = 'A' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + action_info + ' ' + main_display
         elif message == '4':
-            send_message = 'H' + ' ' + hand_info + ' ' + hand_val
+            send_message = 'H' + ' ' + hand_info + ' ' + hand_val + ' ' + main_display
         elif message == '5':
-            send_message = 'C' + ' ' + face_center_info + ' ' + hand_info + ' ' + hand_val
+            send_message = 'C' + ' ' + face_center_info + ' ' + hand_info + ' ' + hand_val + ' ' + main_display
         elif message == '6':
-            send_message = 'S' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + hand_info + ' ' + hand_val
+            send_message = 'S' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + hand_info + ' ' + hand_val + ' ' + main_display
         elif message == '7':
-            send_message = 'L' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + action_info + ' ' + hand_info + ' ' + hand_val
+            send_message = 'L' + ' ' + face_center_info + ' ' + head_pose_info + ' ' + action_info + ' ' + hand_info + ' ' + hand_val + ' ' + main_display
 
         to_renderer.send_string(send_message)
         """tmes = time.time() - start_time

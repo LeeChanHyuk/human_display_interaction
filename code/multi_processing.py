@@ -87,17 +87,27 @@ if __name__ == "__main__":
 	hand_val_sh_array[:] = [0, 0, 0]
 
 	# multi renderer communication
-	port_numbers = [5551, 5552]
+	# if you want to change the port numbers or display positions, you must match the port number and display position correctly.
+	port_numbers = [5551, 5552, 5553]
+	display_positions = [[0, 0, 0], [-630, 0, 0], [630, 0, 0]]
+	
+    # main_display_port
+	main_display_port_shape = (1)
+	size_array = np.zeros(main_display_port_shape, dtype=np.int64)
+	main_display_port_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'main_display_port')
+	main_display_port_sh_array = np.ndarray(main_display_port_shape, dtype=np.int64, buffer=main_display_port_shm.buf)
+	main_display_port_sh_array[:] = 0
+
 
 	#################### Multi processing #########################
 
 	p1 = Process(target=get_input_from_cam)
 	p2 = Process(target=face_detection)
-	p3 = Process(target=head_pose_estimation)
+	p3 = Process(target=head_pose_estimation, args=(display_positions, ))
 	#p4 = Process(target=body_pose_estimation)
 	#p5 = Process(target=action_recognition)
 	for port_number in port_numbers:
-		p6 = Process(target=router_function, args=(port_number,))
+		p6 = Process(target=router_function, args=([port_number, port_numbers],))
 		p6.start()
 	p7 = Process(target=hand_gesture_recognition)
 	p1.start()

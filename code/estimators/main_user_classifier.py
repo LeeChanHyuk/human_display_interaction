@@ -21,9 +21,9 @@ def main_user_drawing(frame, human_infos, main_user_index, flip_mode):
                 cv2.rectangle(frame, (int(human_info.face_box[0][0]), int(human_info.face_box[0][1])), (int(human_info.face_box[0][2]), int(human_info.face_box[0][3])), (255,0,0), 2, cv2.LINE_AA)
     return frame
 
-def main_user_classification(face_center_coordinate, head_poses = None, use_head_pose = False, use_center_people = True):
+def main_user_classification(face_center_coordinate, display_positions = None, head_poses = None, use_head_pose = False, use_center_people = True):
     if head_poses is None:
-        man_score = [4000] * len(face_center_coordinate) # the people must be in 4m range
+        man_score = [8000] * len(face_center_coordinate) # the people must be in 4m range
         for index, human_info in enumerate(face_center_coordinate):
             man_score[index] -= face_center_coordinate[index][2]
             if use_center_people:
@@ -32,12 +32,12 @@ def main_user_classification(face_center_coordinate, head_poses = None, use_head
         main_user_index = man_score.index(max_val)
         return main_user_index
     else:
-        man_score = [4000] * len(head_poses) # the people must be in 4m range
+        man_score = [8000] * len(head_poses) # the people must be in 4m range
         for index, human_info in enumerate(head_poses):
             man_score[index] -= face_center_coordinate[index][2]
             if use_center_people:
                 man_score[index] -= face_center_coordinate[index][0]
-            if use_head_pose and abs(head_poses[index][1]) > 50: # if yaw value of the man is over than 30 or -30, then we think that the man is not looking the display.
+            if use_head_pose and abs(head_poses[index][1]) > 30: # if yaw value of the man is over than 30 or -30, then we think that the man is not looking the display.
                 man_score[index] = 0
         max_val = max(man_score)
         main_user_index = man_score.index(max_val)
@@ -48,6 +48,27 @@ def get_3d_distance(p1, p2):
         p1[i] += 1
     length = math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2 + (p1[2] - p2[2]) ** 2)
     return length
+
+def main_display_classification(human_position, display_positions, main_user_head_pose):
+    angle_diff = []
+    camera_horizontal_angle = 87 # RGB = 60
+    camera_vertical_angle = 58 # RGB = 42
+    for display_position in display_positions:
+        i_width = 640
+        eye_x = (i_width - human_position[0]) - (i_width/2)
+        detected_x_angle = (camera_horizontal_angle / 2) * (eye_x / (i_width/2))
+        new_x = int(human_position[2]) * math.sin(math.radians(detected_x_angle))
+
+        x_diff = new_x - display_position[0]
+        z_diff = int(human_position[2]) - display_position[2]
+
+        angle = math.atan(x_diff/z_diff) * 180 / math.pi
+        abs_diff = abs(angle - main_user_head_pose[1])
+        angle_diff.append(abs_diff)
+    min_val = min(angle_diff)
+    main_display_index = angle_diff.index(min_val)
+    return main_display_index
+
 
 def main_user_classification_filter(tolerance, previous_main_user_position, current_main_user_position, main_user_index, face_center_coordinates, fps):
     distance_threshold = 50
