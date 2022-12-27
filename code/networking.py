@@ -2,6 +2,8 @@ import os
 import time
 import zmq
 import numpy as np
+import pyautogui
+import re
 from multiprocessing import shared_memory
 
 
@@ -81,6 +83,20 @@ def router_function(port_info):
             hand_info = 'standard'
             hand_val = '0 0 0'
             main_display = '0'
+        else:
+            fore = pyautogui.getActiveWindow()
+            if fore is not None:
+                numbers = re.sub(r'[^0-9]', '', fore.title)
+                if numbers != '':
+                    numbers = int(numbers)
+                    if numbers in port_sort:
+                        win = pyautogui.getWindowsWithTitle(str(port_number))[0]
+                        if win.isActive == False:
+                            try:
+                                print('the ' + str(port_number) + ' is activated')
+                                win.activate()
+                            except:
+                                print('', end='')
         if message == '0':
             send_message = 'N'
         elif message == '1':
