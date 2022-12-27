@@ -55,7 +55,7 @@ def main_display_classification(human_position, display_positions, main_user_hea
     camera_vertical_angle = 58 # RGB = 42
     for display_position in display_positions:
         i_width = 640
-        eye_x = (i_width - human_position[0]) - (i_width/2)
+        eye_x = human_position[0] - (i_width/2)
         detected_x_angle = (camera_horizontal_angle / 2) * (eye_x / (i_width/2))
         new_x = int(human_position[2]) * math.sin(math.radians(detected_x_angle))
 
@@ -70,7 +70,6 @@ def main_display_classification(human_position, display_positions, main_user_hea
     min_val = min(angle_diff)
     main_display_index = angle_diff.index(min_val)
     return main_display_index
-
 
 def main_user_classification_filter(tolerance, previous_main_user_position, current_main_user_position, main_user_index, face_center_coordinates, fps):
     distance_threshold = 50
