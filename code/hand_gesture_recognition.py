@@ -21,7 +21,13 @@ wCam, hCam = 640, 640
 def show_image(img, pTime):
     # Frame rate
     cTime = time.time()
-    fps = 1 / (cTime - pTime)
+    diff = cTime - pTime
+    if diff == 0:
+        fps = 20
+    else:
+        fps = 1 / (cTime - pTime)
+        if fps > 100:
+            fps = 20
     pTime = cTime
     cv2.putText(img, f'FPS: {int(fps)}', (40, 50), cv2.FONT_HERSHEY_COMPLEX,
                 1, (255, 0, 0), 3)

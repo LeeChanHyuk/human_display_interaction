@@ -61,6 +61,8 @@ def main_display_classification(human_position, display_positions, main_user_hea
 
         x_diff = new_x - display_position[0]
         z_diff = int(human_position[2]) - display_position[2]
+        if z_diff < 10:
+            z_diff = 600
 
         angle = math.atan(x_diff/z_diff) * 180 / math.pi
         abs_diff = abs(angle - main_user_head_pose[1])
