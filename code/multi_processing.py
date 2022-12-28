@@ -89,7 +89,7 @@ if __name__ == "__main__":
 	# multi renderer communication
 	# if you want to change the port numbers or display positions, you must match the port number and display position correctly.
 	port_numbers = [5551, 5552, 5553]
-	display_positions = [[0, 0, 0], [-630, 0, 0], [630, 0, 0]]
+	display_positions = [[0, 0, 0], [-730, 0, 0], [730, 0, 0]]
 	#port_numbers = [5551]
 	#display_positions = [[0, 0, 0]]
 	
