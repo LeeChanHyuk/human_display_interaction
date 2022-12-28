@@ -27,7 +27,7 @@ def main_user_classification(face_center_coordinate, display_positions = None, h
         for index, human_info in enumerate(face_center_coordinate):
             man_score[index] -= face_center_coordinate[index][2]
             if use_center_people:
-                man_score[index] -= face_center_coordinate[index][0]
+                man_score[index] -= (face_center_coordinate[index][0] * 2)
         max_val = max(man_score)
         main_user_index = man_score.index(max_val)
         return main_user_index
