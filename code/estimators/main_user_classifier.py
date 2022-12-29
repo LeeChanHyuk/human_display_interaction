@@ -21,22 +21,22 @@ def main_user_drawing(frame, human_infos, main_user_index, flip_mode):
                 cv2.rectangle(frame, (int(human_info.face_box[0][0]), int(human_info.face_box[0][1])), (int(human_info.face_box[0][2]), int(human_info.face_box[0][3])), (255,0,0), 2, cv2.LINE_AA)
     return frame
 
-def main_user_classification(face_center_coordinate, display_positions = None, head_poses = None, use_head_pose = False, use_center_people = True):
+def main_user_classification(face_center_coordinate, head_poses = None, use_head_pose = False, use_center_people = True):
     if head_poses is None:
         man_score = [8000] * len(face_center_coordinate) # the people must be in 4m range
         for index, human_info in enumerate(face_center_coordinate):
-            man_score[index] -= face_center_coordinate[index][2]
+            man_score[index] -= (face_center_coordinate[index][2] * 1.5)
             if use_center_people:
-                man_score[index] -= (face_center_coordinate[index][0] * 2)
+                man_score[index] -= abs(face_center_coordinate[index][0] - 320)
         max_val = max(man_score)
         main_user_index = man_score.index(max_val)
         return main_user_index
     else:
         man_score = [8000] * len(head_poses) # the people must be in 4m range
         for index, human_info in enumerate(head_poses):
-            man_score[index] -= face_center_coordinate[index][2]
+            man_score[index] -= (face_center_coordinate[index][2] * 1.5)
             if use_center_people:
-                man_score[index] -= face_center_coordinate[index][0]
+                man_score[index] -= abs(face_center_coordinate[index][0] - 320)
             if use_head_pose and abs(head_poses[index][1]) > 30: # if yaw value of the man is over than 30 or -30, then we think that the man is not looking the display.
                 man_score[index] = 0
         max_val = max(man_score)
@@ -65,10 +65,8 @@ def main_display_classification(human_position, display_positions, main_user_hea
             z_diff = 600
 
         angle = math.atan(x_diff/z_diff) * 180 / math.pi
-        print(angle, end=' ')
         abs_diff = abs(angle - main_user_head_pose[1])
         angle_diff.append(abs_diff)
-    print(main_user_head_pose[1])
     min_val = min(angle_diff)
     main_display_index = angle_diff.index(min_val)
     return main_display_index
