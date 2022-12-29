@@ -75,7 +75,9 @@ def action_recognition():
 		main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
 
 		# face center coordinate calibration
-		calibration(main_user_info, True)
+		calib_pos = calibration(main_user_info.center_eyes[-1].copy(), True)
+
+		main_user_info.calib_center_eyes = calib_pos
 
 		# save the calib face center coordinates
 		main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]

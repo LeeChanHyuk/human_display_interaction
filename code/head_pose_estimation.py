@@ -6,7 +6,7 @@ from multiprocessing import shared_memory
 from estimators.face_detection_module.yolov5.detect import main
 
 import estimators.head_pose_estimation_module.service as service
-from estimators.main_user_classifier import main_user_classification, main_user_classification_filter, main_display_classification
+from estimators.main_user_classifier import main_user_classification, main_user_classification_filter, main_display_classification, rest_display_matching
 from user_information.human import HumanInfo
 from estimators.calibrator import calibration
 from total_visualization import draw_axis
@@ -86,6 +86,12 @@ def head_pose_estimation(display_positions):
 	main_display_port_shm = shared_memory.SharedMemory(name = 'main_display_port')
 	main_display_port_sh_array = np.ndarray(main_display_port_shape, dtype=np.int64, buffer=main_display_port_shm.buf)
 
+    # other display-human matching info
+	display_human_matching_shape = (70)
+	size_array = np.zeros(display_human_matching_shape, dtype=np.float)
+	display_human_matching_shm = shared_memory.SharedMemory(name = 'display_human_matching_info')
+	display_human_matching_sh_array = np.ndarray(display_human_matching_shape, dtype=np.float, buffer=display_human_matching_shm.buf)
+
 	######################## Output ###########################
 	
 
@@ -95,6 +101,7 @@ def head_pose_estimation(display_positions):
 	handler = getattr(service, 'pose')
 	previous_length = 0
 	previous_main_user_position = [0, 0, 0]
+	display_human_matching_indices = None
 	tolerance = 10
 	main_user_info = HumanInfo()
 
@@ -131,7 +138,9 @@ def head_pose_estimation(display_positions):
 				previous_main_user_position = face_center_coordinates[main_user_index]
 
 				# calibrate the face center coordinate with camera
-				calibration(main_user_info, True)
+				calib_pos = calibration(main_user_info.center_eyes[-1].copy(), True)
+
+				main_user_info.calib_center_eyes = calib_pos
 
 				# save the result of calibration
 				main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
@@ -163,6 +172,8 @@ def head_pose_estimation(display_positions):
 			main_display_index = main_display_classification(face_center_coordinates[main_user_index], display_positions, head_poses[main_user_index])
 			#print(main_display_index)
 
+			display_human_matching_indices = rest_display_matching(face_center_coordinates, display_positions, head_poses, main_user_index, main_display_index)
+
 			# save the face center coordinate for using comparison between previous and current main user index
 			previous_main_user_position = face_center_coordinates[main_user_index]
 
@@ -187,17 +198,32 @@ def head_pose_estimation(display_positions):
 			# save the face center coordinate of main user into the shared memory
 			main_user_face_center_coordinate_sh_array[0][:] = face_center_coordinates[main_user_index][:]
 
-		# if the action recognition process is not used in this mode
-		if network_sh_array != 3 and network_sh_array != 7:
-			main_user_info.face_box[:] = main_user_face_box_coordinate_sh_array[0][:]
-			main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
+			# if the action recognition process is not used in this mode
+			if network_sh_array != 3 and network_sh_array != 7:
+				main_user_info.face_box[:] = main_user_face_box_coordinate_sh_array[0][:]
+				main_user_info._put_data([main_user_face_center_coordinate_sh_array[0][0], main_user_face_center_coordinate_sh_array[0][1], main_user_face_center_coordinate_sh_array[0][2]], 'center_eyes')
 
-			# calibrate the face center coordinate with camera
-			calibration(main_user_info, True)
+				# calibrate the face center coordinate with camera
+				calib_pos = calibration(main_user_info.center_eyes[-1].copy(), True)
 
-			# save the result of calibration
-			main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
+				main_user_info.calib_center_eyes = calib_pos
+				
+				if display_human_matching_indices is not None:
+					# display-human matching info initialize
+					display_human_matching_sh_array[:] = size_array[:]
 
-			# show the result image
-			cv2.imshow('draw_frame', draw_frame)
-			cv2.waitKey(1)
+					# fill in the human info matched with displays into the shared memory
+					for index, display_human_matching_index in enumerate(display_human_matching_indices):
+						display_index, human_index = display_human_matching_index
+						temp_calib_pos = calibration(face_center_coordinates[human_index], True)
+						head_pose = head_poses[human_index]
+						display_human_matching_sh_array[index*7:(index*7)+3] = temp_calib_pos[:]
+						display_human_matching_sh_array[(index*7)+3] = face_center_coordinates[human_index][2]
+						display_human_matching_sh_array[(index*7)+4:(index*7)+7] = head_pose
+
+				# save the result of calibration
+				main_user_calib_face_center_coordinate_sh_array[:] = main_user_info.calib_center_eyes[:]
+
+				# show the result image
+				cv2.imshow('draw_frame', draw_frame)
+				cv2.waitKey(1)

@@ -33,8 +33,7 @@ def box_extraction(face_landmarks, width, height):
     return face_boxes, left_eye_boxes, right_eye_boxes
 
 
-def calibration(human_info, real_sense_calibration = True):
-    center_eyes = human_info.center_eyes[-1].copy()
+def calibration(center_eyes, real_sense_calibration = True):
     calib_parameter = [0.9245, -0.004, 0.0584, -0.0242, 0.9475, -0.0083, 0.0208, 0.1013, 0.8956, -32.2596, 121.3725, 26.666 + 200 + 350]
     # y = 240 - y
     # x = x - 320
@@ -62,8 +61,8 @@ def calibration(human_info, real_sense_calibration = True):
     new_x = calib_parameter[0] * new_x + calib_parameter[3] * new_y + calib_parameter[6] * new_z + (calib_parameter[9])
     new_y = calib_parameter[1] * new_x + calib_parameter[4] * new_y + calib_parameter[7] * new_z + (calib_parameter[10])
     new_z = calib_parameter[2] * new_x + calib_parameter[5] * new_y + calib_parameter[8] * new_z + (calib_parameter[11])
-
-    human_info.calib_center_eyes = [new_x, new_y, new_z]
+    
+    return [new_x, new_y, new_z]
 
     # Old calib
     #new_x = eye_z * math.sin(math.radians(detected_x_angle)) * 7 / 9

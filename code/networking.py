@@ -64,6 +64,11 @@ def router_function(port_info):
     main_display_shm = shared_memory.SharedMemory(name = 'main_display_port')
     main_display_sh_array = np.ndarray(main_display_shape, dtype=np.int64, buffer=main_display_shm.buf)
 
+    # other display-human matching info
+    display_human_matching_shape = (70)
+    display_human_matching_shm = shared_memory.SharedMemory(name = 'display_human_matching_info')
+    display_human_matching_sh_array = np.ndarray(display_human_matching_shape, dtype=np.float, buffer=display_human_matching_shm.buf)
+
     while True:
         start_time = time.time()
         message = to_renderer.recv()
@@ -79,10 +84,15 @@ def router_function(port_info):
         hand_val = str(hand_val_sh_array[0]) + ' ' + str(hand_val_sh_array[1]) + ' ' + str(hand_val_sh_array[2])
         main_display = '1'
         if port_sort.index(port_number) != main_display_sh_array[0]:
+            port_index = port_sort.index(port_number)
             action_info = 'standard'
             hand_info = 'standard'
             hand_val = '0 0 0'
             main_display = '0'
+            face_center_info = str(int(display_human_matching_sh_array[(port_index*7)]))+ ' ' + str(int(display_human_matching_sh_array[(port_index*7)+1])) + ' ' + \
+                    str(int(display_human_matching_sh_array[(port_index*7)+2])) + ' ' + str(int(display_human_matching_sh_array[(port_index*7)+3]))
+            head_pose_info = str(int(display_human_matching_sh_array[(port_index*7)+4])) + ' ' +str(int(display_human_matching_sh_array[(port_index*7)+5])) + ' ' + \
+                str(int(display_human_matching_sh_array[(port_index*7)+6]))
         else:
             fore = pyautogui.getActiveWindow()
             if fore is not None:

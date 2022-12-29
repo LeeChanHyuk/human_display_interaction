@@ -100,6 +100,11 @@ if __name__ == "__main__":
 	main_display_port_sh_array = np.ndarray(main_display_port_shape, dtype=np.int64, buffer=main_display_port_shm.buf)
 	main_display_port_sh_array[:] = 0
 
+    # other display-human matching info
+	display_human_matching_shape = (70)
+	size_array = np.zeros(display_human_matching_shape, dtype=np.float)
+	display_human_matching_shm = shared_memory.SharedMemory(create = True, size = size_array.nbytes, name = 'display_human_matching_info')
+	display_human_matching_sh_array = np.ndarray(display_human_matching_shape, dtype=np.float, buffer=display_human_matching_shm.buf)
 
 	#################### Multi processing #########################
 

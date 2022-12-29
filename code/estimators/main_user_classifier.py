@@ -71,6 +71,33 @@ def main_display_classification(human_position, display_positions, main_user_hea
     main_display_index = angle_diff.index(min_val)
     return main_display_index
 
+def rest_display_matching(face_center_coordinates, display_positions, head_poses, main_user_index, main_display_index):
+    camera_horizontal_angle = 87 # RGB = 60
+    display_human_matching_index = []
+    for index, display_position in enumerate(display_positions):
+        if index == main_display_index:
+            display_human_matching_index.append([index, main_user_index])
+            continue
+        angle_diff = []
+        for human_index, human_position in enumerate(face_center_coordinates):
+            i_width = 640
+            eye_x = 320 - (i_width/2)
+            detected_x_angle = (camera_horizontal_angle / 2) * (eye_x / (i_width/2))
+            new_x = int(human_position[2]) * math.sin(math.radians(detected_x_angle))
+
+            x_diff = new_x - display_position[0]
+            z_diff = int(human_position[2]) - display_position[2]
+            if z_diff < 10:
+                z_diff = 600
+
+            angle = math.atan(x_diff/z_diff) * 180 / math.pi
+            abs_diff = abs(angle - head_poses[human_index][1])
+            angle_diff.append(abs_diff)
+        min_val = min(angle_diff)
+        main_human_index = angle_diff.index(min_val)
+        display_human_matching_index.append([index, main_human_index])
+    return display_human_matching_index
+
 def main_user_classification_filter(tolerance, previous_main_user_position, current_main_user_position, main_user_index, face_center_coordinates, fps):
     distance_threshold = 50
     distance = get_3d_distance(previous_main_user_position, current_main_user_position)
