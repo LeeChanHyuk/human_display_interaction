@@ -210,7 +210,6 @@ def hand_gesture_recognition():
                 hand_gesture_sh_array, hand_val_sh_array, user_hand_state = result_networking(hand_gesture_sh_array, hand_val_sh_array, state, detector, fps, val, user_hand_state)
                 detector.state = state
             else:
-
                 """horizontal_hand_flip = detector.horizontal_hand_flip_manipulation(fps, finger_position_list)
                 vertical_hand_flip = detector.vertical_hand_flip_manipulation(fps, finger_position_list)
                 if horizontal_hand_flip:
