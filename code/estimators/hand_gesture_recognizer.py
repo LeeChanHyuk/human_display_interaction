@@ -463,7 +463,18 @@ class handDetector():
         position_y_diff = self.get_3d_x_diff(start_y_angle, end_y_angle, hand_center_position[2], hand_center_position[2])
 
         area = position_x_diff * position_y_diff
-        if area <= 50000:
+
+        directions = ['up', 'left', 'right', 'down']
+        grab = []
+        for i in range(4):
+            index_grab = self.fingerGrab(finger_position_list, 5, directions[i])
+            middle_grab = self.fingerGrab(finger_position_list, 9, directions[i])
+            fourth_grab = self.fingerGrab(finger_position_list, 13, directions[i])
+            pinky_grab = self.fingerGrab(finger_position_list, 17, directions[i])
+            temp_grab = index_grab and middle_grab and fourth_grab and pinky_grab
+            grab.append(temp_grab)
+
+        if area <= 45000 or grab[0] or grab[1] or grab[2] or grab[3]:
             return True, area
         else:
             return False, area
@@ -719,6 +730,34 @@ class handDetector():
 
     # classifying the translation motion
     def translation_manipulation(self, hand_center_position, finger_position_list, fps):
+        fps = int(fps)
+        # if the detector does not classify that the current state is equal translating
+        if self.state != 'translating':
+            # tolerance is used for filtering
+            self.tolerance = fps
+            spread = False
+            # if the hand is grabbing (of course, the fist and grab is not equal each other) and not spreading
+            for i in range(fps):
+                if self.hand_spread_bool[-1-i] == True:
+                    spread = True
+            grab = True
+            for i in range(fps):
+                if self.hand_grab_bool[-1-i] == False:
+                    grab = False
+            if grab and self.hand_up_state and float(time.time()) - self.stopping_time > 1.5 and spread is False:
+                print('previous state is', self.state)
+                self.state = 'translating'
+                self.grab_start_value = hand_center_position
+                self.last_state_changed_time = float(time.time())
+        # if the result of the hand gesture estimation is translating
+        elif self.state == 'translating':
+            translating_factor = self.translation_factor_calculation(hand_center_position, scale_ratio=0.5)
+            self.put_info(translating_factor, 'translating_factor')
+            if self.hand_grab_bool[-1] == False or self.hand_up_state == False:
+                self.state = 'standard'
+
+    # classifying the translation motion
+    def translation_manipulation_new(self, hand_center_position, finger_position_list, fps):
         fps = int(fps)
         # if the detector does not classify that the current state is equal translating
         if self.state != 'translating':
