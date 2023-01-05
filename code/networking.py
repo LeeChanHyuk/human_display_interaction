@@ -89,10 +89,11 @@ def router_function(port_info):
             hand_info = 'standard'
             hand_val = '0 0 0'
             main_display = '0'
-            face_center_info = str(int(display_human_matching_sh_array[(port_index*7)]))+ ' ' + str(int(display_human_matching_sh_array[(port_index*7)+1])) + ' ' + \
+            # if you want to use the multi display - multi user matching function, please delete annotation of below code
+            """face_center_info = str(int(display_human_matching_sh_array[(port_index*7)]))+ ' ' + str(int(display_human_matching_sh_array[(port_index*7)+1])) + ' ' + \
                     str(int(display_human_matching_sh_array[(port_index*7)+2])) + ' ' + str(int(display_human_matching_sh_array[(port_index*7)+3]))
             head_pose_info = str(int(display_human_matching_sh_array[(port_index*7)+4])) + ' ' +str(int(display_human_matching_sh_array[(port_index*7)+5])) + ' ' + \
-                str(int(display_human_matching_sh_array[(port_index*7)+6]))
+                str(int(display_human_matching_sh_array[(port_index*7)+6]))"""
         else:
             fore = pyautogui.getActiveWindow()
             if fore is not None:

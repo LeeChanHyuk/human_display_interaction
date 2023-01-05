@@ -195,7 +195,7 @@ class handDetector():
             for i in range(len(finger_distance_with_face)):
                 scores[i] -= int(finger_distance_with_face[i]) # with main user face
                 scores[i] -= int(2*finger_distance_with_last_hand[i]) # with last hand
-                scores[i] -= int(main_user_finger_list[i][9][2]) # with camera sensor
+                scores[i] -= (4 * int(main_user_finger_list[i][9][2])) # with camera sensor
 
             # return main user left, right hands positions
             if len(main_user_finger_list) > 0:
@@ -247,7 +247,7 @@ class handDetector():
                 for i in range(len(finger_distance_with_face)):
                     scores[i][hand] -= int(finger_distance_with_face[i]) # with main user face
                     scores[i][hand] -= int(2*finger_distance_with_last_two_hand[i][hand]) # with last hand
-                    scores[i][hand] -= int(main_user_finger_list[i][9][2]) # with camera sensor
+                    scores[i][hand] -= (4 * int(main_user_finger_list[i][9][2])) # with camera sensor
             left_max_val = max(scores[0])
             right_max_val = max(scores[1])
             left_main_hand_index = scores[0].index(left_max_val)
