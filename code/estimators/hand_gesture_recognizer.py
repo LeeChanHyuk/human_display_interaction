@@ -443,41 +443,41 @@ class handDetector():
             self.last_hand_position = hand_center_position
         else:
             hand_center_position[2] = self.last_hand_position[2]
-        x_min, y_min, x_max, y_max = 999, 999, -1, -1
-        for i in range(21):
-            if finger_position_list[i][1] < x_min:
-                x_min = finger_position_list[i][1]
-            if finger_position_list[i][1] > x_max:
-                x_max = finger_position_list[i][1]
-            if finger_position_list[i][2] < y_min:
-                y_min = finger_position_list[i][2]
-            if finger_position_list[i][2] > y_max:
-                y_max = finger_position_list[i][2]
-        
-        start_x_angle = self.get_3d_x_angle(x_min, 640, 69)
-        end_x_angle = self.get_3d_x_angle(x_max, 640, 69)
-        position_x_diff = self.get_3d_x_diff(start_x_angle, end_x_angle, hand_center_position[2], hand_center_position[2])
+        """
+        area_ranges = [[x for x in range(21)], [6, 7, 8, 10, 11, 12, 14, 15, 16, 18, 19, 20], [x for x in range(5, 21)]]
+        areas = []
+        for case in range(3):
+            x_min, y_min, x_max, y_max = 999, 999, -1, -1
+            for i in range(21):
+                if i not in area_ranges[case]:
+                    continue
+                if finger_position_list[i][1] < x_min:
+                    x_min = finger_position_list[i][1]
+                if finger_position_list[i][1] > x_max:
+                    x_max = finger_position_list[i][1]
+                if finger_position_list[i][2] < y_min:
+                    y_min = finger_position_list[i][2]
+                if finger_position_list[i][2] > y_max:
+                    y_max = finger_position_list[i][2]
+            
+            start_x_angle = self.get_3d_x_angle(x_min, 640, 69)
+            end_x_angle = self.get_3d_x_angle(x_max, 640, 69)
+            position_x_diff = self.get_3d_x_diff(start_x_angle, end_x_angle, hand_center_position[2], hand_center_position[2])
 
-        start_y_angle = self.get_3d_y_angle(y_min, 640, 69)
-        end_y_angle = self.get_3d_y_angle(y_max, 640, 69)
+            start_y_angle = self.get_3d_y_angle(y_min, 640, 69)
+            end_y_angle = self.get_3d_y_angle(y_max, 640, 69)
+            position_y_diff = self.get_3d_x_diff(start_y_angle, end_y_angle, hand_center_position[2], hand_center_position[2])
+
+            area = position_x_diff * position_y_diff
+            areas.append(area)
+            """
+        start_y_angle = self.get_3d_y_angle(finger_position_list[10][2], 640, 69)
+        end_y_angle = self.get_3d_y_angle(finger_position_list[12][2], 640, 69)
         position_y_diff = self.get_3d_x_diff(start_y_angle, end_y_angle, hand_center_position[2], hand_center_position[2])
-
-        area = position_x_diff * position_y_diff
-
-        directions = ['up', 'left', 'right', 'down']
-        grab = []
-        for i in range(4):
-            index_grab = self.fingerGrab(finger_position_list, 5, directions[i])
-            middle_grab = self.fingerGrab(finger_position_list, 9, directions[i])
-            fourth_grab = self.fingerGrab(finger_position_list, 13, directions[i])
-            pinky_grab = self.fingerGrab(finger_position_list, 17, directions[i])
-            temp_grab = index_grab and middle_grab and fourth_grab and pinky_grab
-            grab.append(temp_grab)
-
-        if area <= 45000 or grab[0] or grab[1] or grab[2] or grab[3]:
-            return True, area
+        if finger_position_list[9][2] - finger_position_list[12][2] < 0 or (position_y_diff > 75 and finger_position_list[12][2] > finger_position_list[10][2]):
+            return True, position_y_diff
         else:
-            return False, area
+            return False, position_y_diff
 
     # classify the direction of hand
     def hand_up(self, finger_position_list, direction):
