@@ -1,6 +1,4 @@
 import cv2
-from matplotlib.axis import YAxis
-from matplotlib.pyplot import pink
 import mediapipe as mp
 import time
 import math
@@ -138,39 +136,10 @@ class handDetector():
                 fingerPositionList.append([id, cx, cy])
         return fingerPositionList
 
-    # deprecated function
-    def find_main_user_hand_old(self, img, face_center, depth):
-        main_user_finger_list = []
-        finger_distance = []
-        if self.results.multi_hand_landmarks:
-            for i in range(len(self.results.multi_hand_landmarks)):
-                fingerPositionList = self.findPosition(img, i, draw = False)
-                finger_center_position = [min(639,fingerPositionList[9][1]), min(639,fingerPositionList[9][2]), depth[min(639,fingerPositionList[9][2]), min(639,fingerPositionList[9][1])]]
-                distance = self.get_3d_distance(finger_center_position, face_center)
-                if distance > 50:
-                    main_user_finger_list.append(fingerPositionList)
-                    finger_distance.append(distance)
-            max_distance = 100000
-            max_index = 0
-
-            # check the two closest finger lists from the center of the main user's face
-            # the list is consisted of left and right hand list of main user
-            for i in range(len(finger_distance)):
-                if finger_distance[i] < max_distance:
-                    max_distance = finger_distance[i]
-                    max_index = i
-
-            # return main user left, right hands positions
-            if len(main_user_finger_list) > 0:
-                return main_user_finger_list[max_index]
-            else:
-                return None
-    
-
     # [Main user classification algorithm explanation]
     # 1. Most closest hand with previous detected hand
     # 2. Hand on main user eye height
-    # 3. Most closest hand with camera sensor
+    # 3. Most closest hand with camera sensor (Most weighted condition)
 
     def find_main_user_hand(self, img, face_center, depth):
         main_user_finger_list = []
@@ -284,8 +253,6 @@ class handDetector():
                 return None, None, None, None
         else:
             return None, None, None, None
-
-
 
     ############################################### hand state analysis functions ###############################################
 
@@ -444,6 +411,7 @@ class handDetector():
         else:
             hand_center_position[2] = self.last_hand_position[2]
         """
+        # depreciated code (below)
         area_ranges = [[x for x in range(21)], [6, 7, 8, 10, 11, 12, 14, 15, 16, 18, 19, 20], [x for x in range(5, 21)]]
         areas = []
         for case in range(3):
@@ -547,7 +515,6 @@ class handDetector():
         scaling_factor = scale_ratio * (diff / 10.0)
         #print(self.scale_start_value, distance_between_two_hand_xz, scaling_factor)
         return scaling_factor
-
 
     ####################################### hand motion classification #########################################
 

@@ -11,13 +11,14 @@ wCam, hCam = 640, 640
 ################################
 
 """ Target
-- 크기 조절 기능 (두 손가락) -> 손을 펴고 있는지 (3개 이상) & 엄지와 검지 끝의 거리를 측정
+- 크기 조절 기능 (두 손바닥) -> 손을 펴고 있는지 (3개 이상) & 엄지와 검지 끝의 거리를 측정
 - Translation 제어 기능 (주먹을 쥔 정도)
 - Rotation 기능 (손바닥을 펴고 좌우로)
 - 떠오르고, 사라지는 기능 (한 손)
 - 분리되고, 합쳐지는 기능 (펼친 손)
 """
 
+# Show the frame
 def show_image(img, pTime):
     # Frame rate
     cTime = time.time()
@@ -36,13 +37,13 @@ def show_image(img, pTime):
     cv2.waitKey(1)
     return int(fps)
 
-# User hand state is defined by sequential same hand state. Thus, the initial state is initialized with sequence formation.
+# User hand state is classified by sequential same hand state. Thus, the initial state is initialized with sequence formation.
 def user_hand_state_initialization(user_hand_state):
     for i in range(200):
         user_hand_state.append('standard')
     return user_hand_state
 
-# User hand state is defined by sequential same hand state
+# User hand state is classified by sequential same hand state
 def user_state_analysis(detector, user_hand_state, fps, current_state, last_state):
     fps = int(fps)
     user_hand_state.popleft()
