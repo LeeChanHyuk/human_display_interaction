@@ -163,7 +163,7 @@ def head_pose_estimation(display_positions):
 			fps = int(1 / (time.time() - start_time))
 
 			# Main user classification (Main user classification requires face coordinates and head poses)
-			main_user_index = main_user_classification(face_center_coordinates, head_poses, use_head_pose=False)
+			main_user_index = main_user_classification(face_center_coordinates, head_poses, use_head_pose=True)
 
 			# Filter the result of main user classification for stabilizing the result of classification
 			main_user_index, tolerance = main_user_classification_filter(tolerance, previous_main_user_position, face_center_coordinates[main_user_index], main_user_index, face_center_coordinates, fps)
