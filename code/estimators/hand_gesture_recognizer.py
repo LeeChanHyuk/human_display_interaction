@@ -191,11 +191,11 @@ class handDetector():
 
             # check the two closest finger lists from the center of the main user's face
             # the list is consisted of left and right hand list of main user
-            scores = [8000] * len(finger_distance_with_face)
+            scores = [15000] * len(finger_distance_with_face)
             for i in range(len(finger_distance_with_face)):
                 scores[i] -= int(finger_distance_with_face[i]) # with main user face
                 scores[i] -= int(2*finger_distance_with_last_hand[i]) # with last hand
-                scores[i] -= (4 * int(main_user_finger_list[i][9][2])) # with camera sensor
+                scores[i] -= (8 * int(main_user_finger_list[i][9][2])) # with camera sensor
 
             # return main user left, right hands positions
             if len(main_user_finger_list) > 0:
@@ -242,12 +242,12 @@ class handDetector():
 
             # check the two closest finger lists from the center of the main user's face
             # the list is consisted of left and right hand list of main user
-            scores = [[8000, 8000] for i in range(len(finger_distance_with_face))]
+            scores = [[15000, 15000] for i in range(len(finger_distance_with_face))]
             for hand in range(2):
                 for i in range(len(finger_distance_with_face)):
                     scores[i][hand] -= int(finger_distance_with_face[i]) # with main user face
                     scores[i][hand] -= int(2*finger_distance_with_last_two_hand[i][hand]) # with last hand
-                    scores[i][hand] -= (4 * int(main_user_finger_list[i][9][2])) # with camera sensor
+                    scores[i][hand] -= (8 * int(main_user_finger_list[i][9][2])) # with camera sensor
             left_max_val = max(scores[0])
             right_max_val = max(scores[1])
             left_main_hand_index = scores[0].index(left_max_val)
@@ -475,8 +475,10 @@ class handDetector():
         end_y_angle = self.get_3d_y_angle(finger_position_list[12][2], 640, 69)
         position_y_diff = self.get_3d_x_diff(start_y_angle, end_y_angle, hand_center_position[2], hand_center_position[2])
         if finger_position_list[9][2] - finger_position_list[12][2] < 0 or (position_y_diff > 75 and finger_position_list[12][2] > finger_position_list[10][2]):
+            print('Fist', position_y_diff)
             return True, position_y_diff
         else:
+            print('Not Fist', position_y_diff)
             return False, position_y_diff
 
     # classify the direction of hand
